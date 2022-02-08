@@ -3,7 +3,6 @@ package internal
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -41,12 +40,11 @@ func NewConfig() *config {
 		host, port, user, password)
 
 	flag.StringVar(&c.RunAddress, "a", setEnvOrDefault(RunAddress, defaultRunAddress), "host to listen on")
-	log.Fatalln(c.RunAddress) //todo delete
 	flag.StringVar(&c.AccrualSystemAddress, "r", setEnvOrDefault(DatabaseURI, defaultAccrualSystemAddress), "baseURl for short link")
 	flag.StringVar(&c.DatabaseURI, "d", setEnvOrDefault(AccrualSystemAddress, defaultConn), "postgres connection path")
 
 	flag.Parse()
-
+	c.RunAddress = "localhost:8080"
 	return c
 }
 
