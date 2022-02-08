@@ -44,7 +44,6 @@ func NewConfig() *config {
 	flag.StringVar(&c.DatabaseURI, "d", setEnvOrDefault(AccrualSystemAddress, defaultConn), "postgres connection path")
 
 	flag.Parse()
-	c.RunAddress = "localhost:8080"
 	return c
 }
 
