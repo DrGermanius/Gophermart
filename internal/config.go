@@ -15,7 +15,7 @@ const (
 )
 
 const (
-	defaultRunAddress           = "localhost:3000"
+	defaultRunAddress           = "localhost:8080"
 	defaultAccrualSystemAddress = "" //todo
 )
 
