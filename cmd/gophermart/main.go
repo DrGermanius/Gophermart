@@ -14,8 +14,8 @@ import (
 )
 
 func main() {
-	cgf := NewConfig()
-	repository, err := NewRepository(cgf.DatabaseURI)
+	cfg := NewConfig()
+	repository, err := NewRepository(cfg.DatabaseURI)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,7 +23,10 @@ func main() {
 	service := NewService(repository)
 	handlers := NewHandlers(service)
 
-	jwtMiddleware := jwtware.New(jwtware.Config{ //todo when jwt == nil return 400 not 401
+	jwtMiddleware := jwtware.New(jwtware.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			return c.Status(fiber.StatusUnauthorized).SendString("Invalid or expired JWT")
+		},
 		SigningKey: []byte("secret"),
 	})
 
@@ -39,7 +42,7 @@ func main() {
 
 	usr.Get("/balance", jwtMiddleware, handlers.GetBalance)
 
-	go log.Fatal(app.Listen(":3000"))
+	go log.Fatal(app.Listen(cfg.RunAddress))
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
