@@ -8,18 +8,22 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 
 	. "github.com/DrGermanius/Gophermart/internal"
 )
 
 func main() {
+	//decimals at json as string
+	//https://github.com/shopspring/decimal/issues/21
+	decimal.MarshalJSONWithoutQuotes = true
+
 	cfg := NewConfig()
 	z, err := zap.NewProduction()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	sugaredLogger := z.Sugar()
 
 	repository, err := NewRepository(cfg.DatabaseURI, sugaredLogger)
