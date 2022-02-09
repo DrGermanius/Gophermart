@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	orderFields    = "number, accrual, status, uploaded_at"
+	orderFields    = "number, user_id, status, uploaded_at"
 	withdrawFields = "order_number, amount, processed_at"
 )
 
@@ -38,10 +38,10 @@ func NewRepository(connString string, logger *zap.SugaredLogger) (*Repository, e
 		return nil, err
 	}
 
-	err = createDatabaseAndTable(conn) //todo migrations?
-	if err != nil {
-		return nil, err
-	}
+	//err = createDatabaseAndTable(conn) //todo migrations?
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return &Repository{conn: conn, logger: logger}, nil
 }
@@ -124,7 +124,7 @@ func (r Repository) CheckCredentials(ctx context.Context, login string, password
 func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (Order, error) {
 	var o Order
 	row := r.conn.QueryRow(ctx, "SELECT "+orderFields+" FROM orders WHERE number = $1", orderNumber) //todo sqlx
-	err := row.Scan(&o.Number, &o.Accrual, &o.Status, &o.UploadedAt)
+	err := row.Scan(&o.Number, &o.UserID, &o.Status, &o.UploadedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Order{UserID: -1}, nil //todo magic number
