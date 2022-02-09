@@ -7,14 +7,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 type Handlers struct {
 	Service IService
+	logger  *zap.SugaredLogger
 }
 
-func NewHandlers(Service IService) *Handlers {
-	return &Handlers{Service: Service}
+func NewHandlers(Service IService, logger *zap.SugaredLogger) *Handlers {
+	return &Handlers{Service: Service, logger: logger}
 }
 
 func (h *Handlers) Login(c *fiber.Ctx) error {

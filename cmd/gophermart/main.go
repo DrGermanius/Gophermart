@@ -7,6 +7,8 @@ import (
 	"syscall"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"go.uber.org/zap"
 
 	jwtware "github.com/gofiber/jwt/v3"
 
@@ -15,14 +17,20 @@ import (
 
 func main() {
 	cfg := NewConfig()
-	//todo logger
-	repository, err := NewRepository(cfg.DatabaseURI)
+	z, err := zap.NewProduction()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	service := NewService(repository)
-	handlers := NewHandlers(service)
+	sugaredLogger := z.Sugar()
+
+	repository, err := NewRepository(cfg.DatabaseURI, sugaredLogger)
+	if err != nil {
+		sugaredLogger.Fatal(err)
+	}
+
+	service := NewService(repository, sugaredLogger)
+	handlers := NewHandlers(service, sugaredLogger)
 
 	jwtMiddleware := jwtware.New(jwtware.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -32,6 +40,8 @@ func main() {
 	})
 
 	app := fiber.New()
+	app.Use(logger.New())
+
 	api := app.Group("/api")
 
 	usr := api.Group("/user")
@@ -46,10 +56,10 @@ func main() {
 	usr.Get("/balance/withdraw", jwtMiddleware, handlers.WithdrawHistory)
 	usr.Post("/balance/withdraw", jwtMiddleware, handlers.Withdraw)
 
-	go log.Fatal(app.Listen(cfg.RunAddress))
+	go sugaredLogger.Fatal(app.Listen(cfg.RunAddress))
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutting down service...")
+	sugaredLogger.Info("Shutting down service...")
 }

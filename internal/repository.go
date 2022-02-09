@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"go.uber.org/zap"
 )
 
 const (
@@ -27,10 +28,11 @@ type IRepository interface {
 }
 
 type Repository struct {
-	conn *pgxpool.Pool
+	conn   *pgxpool.Pool
+	logger *zap.SugaredLogger
 }
 
-func NewRepository(connString string) (*Repository, error) {
+func NewRepository(connString string, logger *zap.SugaredLogger) (*Repository, error) {
 	conn, err := pgxpool.Connect(context.Background(), connString)
 	if err != nil {
 		return nil, err
@@ -41,7 +43,7 @@ func NewRepository(connString string) (*Repository, error) {
 		return nil, err
 	}
 
-	return &Repository{conn: conn}, nil
+	return &Repository{conn: conn, logger: logger}, nil
 }
 
 func createDatabaseAndTable(c *pgxpool.Pool) error {

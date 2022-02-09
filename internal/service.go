@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/theplant/luhn"
+	"go.uber.org/zap"
 )
 
 type IService interface {
@@ -22,12 +23,13 @@ type IService interface {
 	GetWithdrawHistory(context.Context, int) ([]WithdrawOutput, error)
 }
 
-func NewService(Repository IRepository) *Service {
-	return &Service{Repository: Repository}
+func NewService(Repository IRepository, logger *zap.SugaredLogger) *Service {
+	return &Service{Repository: Repository, logger: logger}
 }
 
 type Service struct {
 	Repository IRepository
+	logger     *zap.SugaredLogger
 }
 
 func (s Service) SendOrder(ctx context.Context, orderNumber int, uid int) error {
