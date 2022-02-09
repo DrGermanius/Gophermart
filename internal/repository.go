@@ -19,8 +19,8 @@ type IRepository interface {
 	Register(context.Context, string, string) (int, error)
 	IsUserExist(context.Context, string) (bool, error)
 	CheckCredentials(context.Context, string, string) (int, error)
-	GetOrderByID(context.Context, int) (Order, error)
-	SendOrder(context.Context, int, int) error
+	GetOrderByID(context.Context, string) (Order, error)
+	SendOrder(context.Context, string, int) error
 	GetOrders(context.Context, int) ([]OrderOutput, error)
 	GetBalanceByUserID(context.Context, int) (BalanceWithdrawn, error)
 	Withdraw(context.Context, WithdrawInput, BalanceWithdrawn, int) error
@@ -121,7 +121,7 @@ func (r Repository) CheckCredentials(ctx context.Context, login string, password
 	return id, nil
 }
 
-func (r Repository) GetOrderByID(ctx context.Context, orderNumber int) (Order, error) {
+func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (Order, error) {
 	var o Order
 	row := r.conn.QueryRow(ctx, "SELECT "+orderFields+" FROM orders WHERE number = $1", orderNumber) //todo sqlx
 	err := row.Scan(&o.ID, &o.Number, &o.UserID, &o.Accrual, &o.Status, &o.UploadedAt)
@@ -135,7 +135,7 @@ func (r Repository) GetOrderByID(ctx context.Context, orderNumber int) (Order, e
 	return o, nil
 }
 
-func (r Repository) SendOrder(ctx context.Context, orderNumber int, userID int) error {
+func (r Repository) SendOrder(ctx context.Context, orderNumber string, userID int) error {
 	_, err := r.conn.Exec(ctx, "INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)", orderNumber, userID, OrderStatusRegistered, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err

@@ -72,7 +72,7 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on create order request", "data": "incorrect request format"})
 	}
 
-	orderNumber, err := strconv.Atoi(string(c.Body()))
+	orderNumber := string(c.Body())
 	if err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "error", "message": "Error on create order request", "data": err})
 	}
@@ -133,7 +133,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 
 	var i WithdrawInput
 
-	if err = c.BodyParser(&i); err != nil || i.OrderNumber == 0 || i.Sum.Equal(decimal.NewFromInt(0)) { //todo beautify?
+	if err = c.BodyParser(&i); err != nil || i.OrderNumber == "" || i.Sum.Equal(decimal.NewFromInt(0)) { //todo beautify?
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on register request", "data": err})
 	}
 

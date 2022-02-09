@@ -16,7 +16,7 @@ type IService interface {
 	Register(context.Context, string, string) (string, error)
 	Login(context.Context, string, string) (string, error)
 	GetJWTToken(string) (string, error)
-	SendOrder(context.Context, int, int) error
+	SendOrder(context.Context, string, int) error
 	GetOrders(context.Context, int) ([]OrderOutput, error)
 	GetBalanceByUserID(context.Context, int) (BalanceWithdrawn, error)
 	Withdraw(context.Context, WithdrawInput, int) error
@@ -32,8 +32,13 @@ type Service struct {
 	logger     *zap.SugaredLogger
 }
 
-func (s Service) SendOrder(ctx context.Context, orderNumber int, uid int) error {
-	if !luhn.Valid(orderNumber) {
+func (s Service) SendOrder(ctx context.Context, orderNumber string, uid int) error {
+	o, err := strconv.Atoi(orderNumber)
+	if err != nil {
+		return err
+	}
+
+	if !luhn.Valid(o) {
 		return ErrLuhnInvalid
 	}
 
@@ -134,7 +139,12 @@ func (s Service) GetBalanceByUserID(ctx context.Context, uid int) (BalanceWithdr
 func (s Service) Withdraw(ctx context.Context, i WithdrawInput, uid int) error {
 	//todo is we need mutex here?
 
-	if !luhn.Valid(int(i.OrderNumber)) {
+	o, err := strconv.Atoi(i.OrderNumber)
+	if err != nil {
+		return err
+	}
+
+	if !luhn.Valid(o) {
 		return ErrLuhnInvalid
 	}
 
