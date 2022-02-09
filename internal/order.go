@@ -21,3 +21,10 @@ type Order struct {
 	Status     string          `json:"status"`
 	UploadedAt time.Time       `json:"uploadedAt"`
 }
+
+type OrderOutput struct {
+	Number     int64           `json:"number"`
+	Status     string          `json:"status"`
+	Accrual    decimal.Decimal `json:"accrual"`
+	UploadedAt time.Time       `json:"uploadedAt"`
+}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/shopspring/decimal"
 )
 
 type Handlers struct {
@@ -67,7 +68,7 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "error", "message": "Error on create order request", "data": err})
 	}
 
-	err = h.Service.SentOrder(c.Context(), orderNumber, uid)
+	err = h.Service.SendOrder(c.Context(), orderNumber, uid)
 	if err != nil {
 		if errors.Is(err, ErrLuhnInvalid) {
 			return c.SendStatus(fiber.StatusUnprocessableEntity)
@@ -92,7 +93,7 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 
 	orders, err := h.Service.GetOrders(c.Context(), uid)
 	if err != nil {
-		if errors.Is(err, ErrNoOrders) {
+		if errors.Is(err, ErrNoRecords) {
 			return c.SendStatus(fiber.StatusNoContent)
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
@@ -113,6 +114,49 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(bw)
+}
+
+func (h *Handlers) Withdraw(c *fiber.Ctx) error {
+	uid, err := getUserIDFromToken(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+	}
+
+	var i WithdrawInput
+
+	if err = c.BodyParser(&i); err != nil || i.OrderNumber == 0 || i.Sum.Equal(decimal.NewFromInt(0)) { //todo beautify?
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on register request", "data": err})
+	}
+
+	err = h.Service.Withdraw(c.Context(), i, uid)
+	if err != nil {
+		if errors.Is(err, ErrLuhnInvalid) {
+			return c.SendStatus(fiber.StatusUnprocessableEntity)
+		}
+		if errors.Is(err, ErrInsufficientFunds) {
+			return c.SendStatus(fiber.StatusPaymentRequired)
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
+	uid, err := getUserIDFromToken(c)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	wh, err := h.Service.GetWithdrawHistory(c.Context(), uid)
+	if err != nil {
+		if errors.Is(err, ErrNoRecords) {
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(wh)
 }
 
 func getUserIDFromToken(c *fiber.Ctx) (int, error) {

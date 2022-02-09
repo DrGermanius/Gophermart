@@ -15,9 +15,11 @@ type IService interface {
 	Register(context.Context, string, string) (string, error)
 	Login(context.Context, string, string) (string, error)
 	GetJWTToken(string) (string, error)
-	SentOrder(context.Context, int, int) error
-	GetOrders(context.Context, int) ([]Order, error)
+	SendOrder(context.Context, int, int) error
+	GetOrders(context.Context, int) ([]OrderOutput, error)
 	GetBalanceByUserID(context.Context, int) (BalanceWithdrawn, error)
+	Withdraw(context.Context, WithdrawInput, int) error
+	GetWithdrawHistory(context.Context, int) ([]WithdrawOutput, error)
 }
 
 func NewService(Repository IRepository) *Service {
@@ -28,7 +30,7 @@ type Service struct {
 	Repository IRepository
 }
 
-func (s Service) SentOrder(ctx context.Context, orderNumber int, uid int) error {
+func (s Service) SendOrder(ctx context.Context, orderNumber int, uid int) error {
 	if !luhn.Valid(orderNumber) {
 		return ErrLuhnInvalid
 	}
@@ -46,7 +48,7 @@ func (s Service) SentOrder(ctx context.Context, orderNumber int, uid int) error 
 		return ErrOrderIsAlreadySentByOtherUser
 	}
 
-	err = s.Repository.SentOrder(ctx, orderNumber, uid)
+	err = s.Repository.SendOrder(ctx, orderNumber, uid)
 	if err != nil {
 		return err
 	}
@@ -106,14 +108,14 @@ func (s Service) GetJWTToken(uid string) (string, error) {
 	return t, nil
 }
 
-func (s Service) GetOrders(ctx context.Context, uid int) ([]Order, error) {
+func (s Service) GetOrders(ctx context.Context, uid int) ([]OrderOutput, error) {
 	orders, err := s.Repository.GetOrders(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(orders) == 0 {
-		return nil, ErrNoOrders
+		return nil, ErrNoRecords
 	}
 	return orders, nil
 }
@@ -125,6 +127,47 @@ func (s Service) GetBalanceByUserID(ctx context.Context, uid int) (BalanceWithdr
 	}
 
 	return bw, nil
+}
+
+func (s Service) Withdraw(ctx context.Context, i WithdrawInput, uid int) error {
+	//todo is we need mutex here?
+
+	if !luhn.Valid(int(i.OrderNumber)) {
+		return ErrLuhnInvalid
+	}
+
+	bw, err := s.Repository.GetBalanceByUserID(ctx, uid) //todo can be called by 2 goroutines at same time?
+	if err != nil {
+		return err
+	}
+
+	if bw.Balance.LessThan(i.Sum) {
+		return ErrInsufficientFunds
+	}
+
+	newBw := BalanceWithdrawn{
+		Balance:   bw.Balance.Sub(i.Sum),
+		Withdrawn: bw.Withdrawn.Add(i.Sum),
+	}
+
+	err = s.Repository.Withdraw(ctx, i, newBw, uid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Service) GetWithdrawHistory(ctx context.Context, uid int) ([]WithdrawOutput, error) {
+	wh, err := s.Repository.GetWithdrawHistory(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(wh) == 0 {
+		return nil, ErrNoRecords
+	}
+	return wh, nil
 }
 
 func getHash(s string) string {

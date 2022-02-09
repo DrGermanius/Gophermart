@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	orderFields = "id, number, user_id, accrual, status, uploaded_at"
+	orderFields    = "number, accrual, status, uploaded_at"
+	withdrawFields = "order_number, amount, processed_at"
 )
 
 type IRepository interface {
@@ -18,9 +19,11 @@ type IRepository interface {
 	IsUserExist(context.Context, string) (bool, error)
 	CheckCredentials(context.Context, string, string) (int, error)
 	GetOrderByID(context.Context, int) (Order, error)
-	SentOrder(context.Context, int, int) error
-	GetOrders(context.Context, int) ([]Order, error)
+	SendOrder(context.Context, int, int) error
+	GetOrders(context.Context, int) ([]OrderOutput, error)
 	GetBalanceByUserID(context.Context, int) (BalanceWithdrawn, error)
+	Withdraw(context.Context, WithdrawInput, BalanceWithdrawn, int) error
+	GetWithdrawHistory(context.Context, int) ([]WithdrawOutput, error)
 }
 
 type Repository struct {
@@ -130,7 +133,7 @@ func (r Repository) GetOrderByID(ctx context.Context, orderNumber int) (Order, e
 	return o, nil
 }
 
-func (r Repository) SentOrder(ctx context.Context, orderNumber int, userID int) error {
+func (r Repository) SendOrder(ctx context.Context, orderNumber int, userID int) error {
 	_, err := r.conn.Exec(ctx, "INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)", orderNumber, userID, OrderStatusRegistered, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
@@ -138,16 +141,16 @@ func (r Repository) SentOrder(ctx context.Context, orderNumber int, userID int) 
 	return nil
 }
 
-func (r Repository) GetOrders(ctx context.Context, uid int) ([]Order, error) {
+func (r Repository) GetOrders(ctx context.Context, uid int) ([]OrderOutput, error) {
 	rows, err := r.conn.Query(ctx, "SELECT "+orderFields+" FROM orders WHERE user_id = $1 ORDER BY uploaded_at DESC", uid)
 	if err != nil {
 		return nil, err
 	}
 
-	var orders []Order
+	var orders []OrderOutput
 	for rows.Next() {
-		var o Order
-		err = rows.Scan(&o.ID, &o.Number, &o.UserID, &o.Accrual, &o.Status, &o.UploadedAt)
+		var o OrderOutput
+		err = rows.Scan(&o.Number, &o.Accrual, &o.Status, &o.UploadedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -167,4 +170,44 @@ func (r Repository) GetBalanceByUserID(ctx context.Context, uid int) (BalanceWit
 	}
 
 	return bw, nil
+}
+
+func (r Repository) Withdraw(ctx context.Context, i WithdrawInput, bw BalanceWithdrawn, uid int) error {
+	tx, err := r.conn.Begin(ctx)
+	defer tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, "INSERT INTO withdraw_history (order_number, user_id, amount, processed_at) VALUES ($1, $2, $3, $4)", i.OrderNumber, uid, i.Sum, time.Now().Format(time.RFC3339))
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, "UPDATE users SET balance = $1, withdrawn = $2 WHERE id = $3", bw.Balance, bw.Withdrawn, uid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r Repository) GetWithdrawHistory(ctx context.Context, uid int) ([]WithdrawOutput, error) {
+	rows, err := r.conn.Query(ctx, "SELECT "+withdrawFields+" FROM withdraw_history WHERE user_id = $1 ORDER BY processed_at DESC", uid)
+	if err != nil {
+		return nil, err
+	}
+
+	var wh []WithdrawOutput
+	for rows.Next() {
+		var w WithdrawOutput
+		err = rows.Scan(&w.OrderNumber, &w.Sum, &w.ProcessedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		wh = append(wh, w)
+	}
+
+	return wh, nil
 }

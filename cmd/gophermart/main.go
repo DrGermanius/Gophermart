@@ -15,6 +15,7 @@ import (
 
 func main() {
 	cfg := NewConfig()
+	//todo logger
 	repository, err := NewRepository(cfg.DatabaseURI)
 	if err != nil {
 		log.Fatal(err)
@@ -41,6 +42,9 @@ func main() {
 	usr.Post("/orders", jwtMiddleware, handlers.CreateOrder)
 
 	usr.Get("/balance", jwtMiddleware, handlers.GetBalance)
+
+	usr.Get("/balance/withdraw", jwtMiddleware, handlers.WithdrawHistory)
+	usr.Post("/balance/withdraw", jwtMiddleware, handlers.Withdraw)
 
 	go log.Fatal(app.Listen(cfg.RunAddress))
 
