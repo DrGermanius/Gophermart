@@ -173,6 +173,7 @@ func setAuthCookie(c *fiber.Ctx, token string) {
 		Name:    "token",
 		Value:   token,
 		Path:    "/",
+		MaxAge:  100,
 		Expires: time.Now().Add(24 * time.Hour),
 	}
 
