@@ -15,7 +15,7 @@ const (
 )
 
 const (
-	defaultRunAddress           = "localhost:3000"
+	defaultRunAddress           = "localhost:8080"
 	defaultAccrualSystemAddress = "" //todo
 )
 
@@ -40,8 +40,8 @@ func NewConfig() *config {
 		host, port, user, password)
 
 	flag.StringVar(&c.RunAddress, "a", setEnvOrDefault(RunAddress, defaultRunAddress), "host to listen on")
-	flag.StringVar(&c.AccrualSystemAddress, "r", setEnvOrDefault(DatabaseURI, defaultAccrualSystemAddress), "baseURl for short link")
-	flag.StringVar(&c.DatabaseURI, "d", setEnvOrDefault(AccrualSystemAddress, defaultConn), "postgres connection path")
+	flag.StringVar(&c.DatabaseURI, "d", setEnvOrDefault(DatabaseURI, defaultConn), "postgres connection path")
+	flag.StringVar(&c.AccrualSystemAddress, "r", setEnvOrDefault(AccrualSystemAddress, AccrualSystemAddress), "Accrual system address")
 
 	flag.Parse()
 	return c
