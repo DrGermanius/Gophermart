@@ -124,7 +124,7 @@ func (r Repository) CheckCredentials(ctx context.Context, login string, password
 func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (Order, error) {
 	var o Order
 	row := r.conn.QueryRow(ctx, "SELECT "+orderFields+" FROM orders WHERE number = $1", orderNumber) //todo sqlx
-	err := row.Scan(&o.ID, &o.Number, &o.UserID, &o.Accrual, &o.Status, &o.UploadedAt)
+	err := row.Scan(&o.Number, &o.Accrual, &o.Status, &o.UploadedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Order{UserID: -1}, nil //todo magic number
