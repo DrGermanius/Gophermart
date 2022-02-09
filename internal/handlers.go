@@ -36,7 +36,7 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(fiber.Map{"token": t})
+	return c.JSON(t)
 }
 
 func (h *Handlers) Register(c *fiber.Ctx) error {
