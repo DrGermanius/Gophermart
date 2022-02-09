@@ -36,7 +36,7 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(t)
+	return c.JSON(fiber.Map{"jwt": t})
 }
 
 func (h *Handlers) Register(c *fiber.Ctx) error {
@@ -56,7 +56,7 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(t)
+	return c.JSON(fiber.Map{"jwt": t})
 }
 
 func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
