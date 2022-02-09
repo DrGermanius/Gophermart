@@ -23,15 +23,17 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 	var i LoginInput
 
 	if err := c.BodyParser(&i); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on login request", "data": err})
+		h.logger.Errorf("Error on login request: %s", err.Error())
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	t, err := h.Service.Login(c.Context(), i.Login, i.Password)
 	if err != nil {
+		h.logger.Errorf("Error on login request: %s", err.Error())
 		if errors.Is(err, ErrInvalidCredentials) {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Error on login request", "data": err})
+			return c.SendStatus(fiber.StatusUnauthorized)
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on login request", "data": err})
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.JSON(fiber.Map{"token": t})
@@ -41,15 +43,17 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 	var i LoginInput
 
 	if err := c.BodyParser(&i); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on register request", "data": err})
+		h.logger.Errorf("Error on register request: %s", err.Error())
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	t, err := h.Service.Register(c.Context(), i.Login, i.Password)
 	if err != nil {
+		h.logger.Errorf("Error on register request: %s", err.Error())
 		if errors.Is(err, ErrLoginIsAlreadyTaken) {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"status": "error", "message": "Error on register request", "data": err})
+			return c.SendStatus(fiber.StatusConflict)
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on register request", "data": err})
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.JSON(fiber.Map{"token": t})
