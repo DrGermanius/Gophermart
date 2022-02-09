@@ -171,7 +171,7 @@ func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
 func setAuthCookie(c *fiber.Ctx, token string) {
 	cookie := &fiber.Cookie{
 		Name:    "token",
-		Value:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2NDQ2ODY5MTAsImlkIjoiMTAifQ1EnhiVKub6bQAcyDSxRik9RaTX75fH9YNlX46zzNms",
+		Value:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2",
 		Path:    "/",
 		MaxAge:  100,
 		Expires: time.Now().Add(24 * time.Hour),
