@@ -10,17 +10,17 @@ CREATE TABLE users
 CREATE TABLE orders
 (
     id          SERIAL PRIMARY KEY,
-    number      BIGINT UNIQUE   NOT NULL,
-    user_id     INT             NOT NULL REFERENCES users,
-    accrual     DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
-    status      VARCHAR(255)    NOT NULL,
-    uploaded_at TIMESTAMP       NOT NULL
+    number      VARCHAR(255) UNIQUE NOT NULL,
+    user_id     INT                 NOT NULL REFERENCES users,
+    accrual     DECIMAL(36, 18)     NOT NULL DEFAULT 0.0,
+    status      VARCHAR(255)        NOT NULL,
+    uploaded_at TIMESTAMP           NOT NULL
 );
 
 CREATE TABLE withdraw_history
 (
     id           SERIAL PRIMARY KEY,
-    order_number BIGINT          NOT NULL,
+    order_number VARCHAR(255)    NOT NULL,
     user_id      INT             NOT NULL REFERENCES users,
     amount       DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
     processed_at TIMESTAMP       NOT NULL

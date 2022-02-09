@@ -62,7 +62,7 @@ func createDatabaseAndTable(c *pgxpool.Pool) error {
 	CREATE TABLE orders
 	(
 		id          SERIAL PRIMARY KEY,
-		number      BIGINT UNIQUE   NOT NULL,
+		number      VARCHAR(255) UNIQUE   NOT NULL,
 		user_id     INT             NOT NULL REFERENCES users,
 		accrual     DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
 		status      VARCHAR(255)    NOT NULL,
@@ -72,7 +72,7 @@ func createDatabaseAndTable(c *pgxpool.Pool) error {
 	CREATE TABLE withdraw_history
 	(
 		id           SERIAL PRIMARY KEY,
-		order_number BIGINT          NOT NULL REFERENCES orders (number),
+		order_number VARCHAR(255)          NOT NULL REFERENCES orders (number),
 		user_id      INT             NOT NULL REFERENCES users,
 		amount       DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
 		withdrawn    DECIMAL(36, 18) NOT NULL DEFAULT 0.0
