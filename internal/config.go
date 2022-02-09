@@ -36,7 +36,7 @@ func NewConfig() *config {
 	c = new(config)
 
 	defaultConn := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s sslmode=disable database=mart", // database=mart
+		"password=%s sslmode=disable", // database=mart
 		host, port, user, password)
 
 	flag.StringVar(&c.RunAddress, "a", setEnvOrDefault(RunAddress, defaultRunAddress), "host to listen on")
