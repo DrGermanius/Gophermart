@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
@@ -36,7 +37,8 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(fiber.Map{"jwt": t})
+	setAuthCookie(c, t)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (h *Handlers) Register(c *fiber.Ctx) error {
@@ -56,7 +58,8 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	return c.JSON(fiber.Map{"jwt": t})
+	setAuthCookie(c, t)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
@@ -165,9 +168,27 @@ func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(wh)
 }
 
+func setAuthCookie(c *fiber.Ctx, token string) {
+	cookie := &fiber.Cookie{
+		Name:    "token",
+		Value:   token,
+		Path:    "/",
+		Expires: time.Now().Add(24 * time.Hour),
+	}
+
+	c.Cookie(cookie)
+}
+
 func getUserIDFromToken(c *fiber.Ctx) (int, error) {
-	user := c.Locals("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
+	tokenString := c.Cookies("token")
+	claims := jwt.MapClaims{}
+	_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
 	id := claims["id"].(string)
 	return strconv.Atoi(id)
 }
