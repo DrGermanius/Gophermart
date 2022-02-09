@@ -47,7 +47,7 @@ func NewRepository(connString string, logger *zap.SugaredLogger) (*Repository, e
 }
 
 func createDatabaseAndTable(c *pgxpool.Pool) error {
-	_, err := c.Exec(context.Background(), "CREATE DATABASE mart")
+	_, err := c.Exec(context.Background(), "CREATE DATABASE mart2")
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (r Repository) Register(ctx context.Context, login, password string) (int, 
 func (r Repository) IsUserExist(ctx context.Context, login string) (bool, error) {
 	exist := false
 
-	row := r.conn.QueryRow(ctx, "SELECT EXIST(SELECT 1 FROM users WHERE  login=$1)", login)
+	row := r.conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE  login=$1)", login)
 	err := row.Scan(&exist)
 	if err != nil {
 		return false, err
