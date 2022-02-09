@@ -65,7 +65,7 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	if c.GetReqHeaders()["Content-Type"] != "text/plain" {
@@ -97,7 +97,7 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	orders, err := h.Service.GetOrders(c.Context(), uid)
@@ -114,7 +114,7 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	bw, err := h.Service.GetBalanceByUserID(c.Context(), uid)
@@ -128,7 +128,7 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	var i WithdrawInput
@@ -154,7 +154,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	wh, err := h.Service.GetWithdrawHistory(c.Context(), uid)

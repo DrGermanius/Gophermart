@@ -10,8 +10,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"go.uber.org/zap"
 
-	jwtware "github.com/gofiber/jwt/v3"
-
 	. "github.com/DrGermanius/Gophermart/internal"
 )
 
@@ -32,12 +30,12 @@ func main() {
 	service := NewService(repository, sugaredLogger)
 	handlers := NewHandlers(service, sugaredLogger)
 
-	jwtMiddleware := jwtware.New(jwtware.Config{
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return c.Status(fiber.StatusUnauthorized).SendString("Invalid or expired JWT")
-		},
-		SigningKey: []byte("secret"),
-	})
+	//jwtMiddleware := jwtware.New(jwtware.Config{
+	//	ErrorHandler: func(c *fiber.Ctx, err error) error {
+	//		return c.Status(fiber.StatusUnauthorized).SendString("Invalid or expired JWT")
+	//	},
+	//	SigningKey: []byte("secret"),
+	//})
 
 	app := fiber.New()
 	app.Use(logger.New())
@@ -48,13 +46,13 @@ func main() {
 	usr.Post("/login", handlers.Login)
 	usr.Post("/register", handlers.Register)
 
-	usr.Get("/orders", jwtMiddleware, handlers.GetOrders)
-	usr.Post("/orders", jwtMiddleware, handlers.CreateOrder)
+	usr.Get("/orders", handlers.GetOrders)
+	usr.Post("/orders", handlers.CreateOrder)
 
-	usr.Get("/balance", jwtMiddleware, handlers.GetBalance)
+	usr.Get("/balance", handlers.GetBalance)
 
-	usr.Get("/balance/withdraw", jwtMiddleware, handlers.WithdrawHistory)
-	usr.Post("/balance/withdraw", jwtMiddleware, handlers.Withdraw)
+	usr.Get("/balance/withdraw", handlers.WithdrawHistory)
+	usr.Post("/balance/withdraw", handlers.Withdraw)
 
 	go sugaredLogger.Fatal(app.Listen(cfg.RunAddress))
 
