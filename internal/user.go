@@ -15,6 +15,6 @@ type LoginInput struct {
 }
 
 type BalanceWithdrawn struct {
-	Balance   decimal.Decimal `json:"balance"`
+	Balance   decimal.Decimal `json:"current"`
 	Withdrawn decimal.Decimal `json:"withdrawn"`
 }
