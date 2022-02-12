@@ -34,6 +34,7 @@ func main() {
 	service := NewService(repository, sugaredLogger)
 	handlers := NewHandlers(service, sugaredLogger)
 
+	//redundant when cookies are used
 	//jwtMiddleware := jwtware.New(jwtware.Config{
 	//	ErrorHandler: func(c *fiber.Ctx, err error) error {
 	//		return c.Status(fiber.StatusUnauthorized).SendString("Invalid or expired JWT")

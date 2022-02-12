@@ -69,12 +69,12 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 	}
 
 	if c.GetReqHeaders()["Content-Type"] != "text/plain" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on create order request", "data": "incorrect request format"})
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	orderNumber := string(c.Body())
 	if err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"status": "error", "message": "Error on create order request", "data": err})
+		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	}
 
 	err = h.Service.SendOrder(c.Context(), orderNumber, uid)
@@ -86,9 +86,9 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 			return c.SendStatus(fiber.StatusOK)
 		}
 		if errors.Is(err, ErrOrderIsAlreadySentByOtherUser) {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"status": "error", "message": "Error on sending request", "data": err})
+			return c.SendStatus(fiber.StatusConflict)
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.SendStatus(fiber.StatusAccepted)
@@ -105,7 +105,7 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 		if errors.Is(err, ErrNoRecords) {
 			return c.SendStatus(fiber.StatusNoContent)
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(orders)
@@ -119,7 +119,7 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 
 	bw, err := h.Service.GetBalanceByUserID(c.Context(), uid)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(bw)
@@ -134,7 +134,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 	var i WithdrawInput
 
 	if err = c.BodyParser(&i); err != nil || i.OrderNumber == "" || i.Sum.Equal(decimal.NewFromInt(0)) { //todo beautify?
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on register request", "data": err})
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	err = h.Service.Withdraw(c.Context(), i, uid)
@@ -145,7 +145,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 		if errors.Is(err, ErrInsufficientFunds) {
 			return c.SendStatus(fiber.StatusPaymentRequired)
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Error on sending order request", "data": err})
+		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
 	return c.SendStatus(fiber.StatusOK)
