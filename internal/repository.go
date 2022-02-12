@@ -56,7 +56,8 @@ func createDatabaseAndTable(c *pgxpool.Pool) error {
 		id       SERIAL PRIMARY KEY,
 		login    VARCHAR(255)    NOT NULL,
 		password VARCHAR(255)    NOT NULL,
-		balance  DECIMAL(36, 18) NOT NULL DEFAULT 0.0
+		balance  DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
+    	withdrawn DECIMAL(36, 18) NOT NULL DEFAULT 0.0
 	);
 	
 	CREATE TABLE orders
