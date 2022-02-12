@@ -136,7 +136,7 @@ func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (Order
 }
 
 func (r Repository) SendOrder(ctx context.Context, orderNumber string, userID int) error {
-	_, err := r.conn.Exec(ctx, "INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)", orderNumber, userID, OrderStatusRegistered, time.Now().Format(time.RFC3339))
+	_, err := r.conn.Exec(ctx, "INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)", orderNumber, userID, OrderStatusNew, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
 	}

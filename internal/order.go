@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	OrderStatusNew        = "NEW"
 	OrderStatusRegistered = "REGISTERED"
 	OrderStatusProcessing = "PROCESSING"
 	OrderStatusInvalid    = "INVALID"
