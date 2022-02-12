@@ -77,11 +77,6 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 	}
 
 	orderNumber := string(c.Body())
-	if err != nil {
-		h.logger.Errorf("Error on CreateOrder request: %s", err.Error())
-		return c.SendStatus(fiber.StatusUnprocessableEntity)
-	}
-
 	err = h.Service.SendOrder(c.Context(), orderNumber, uid)
 	if err != nil {
 		h.logger.Errorf("Error on CreateOrder request: %s", err.Error())

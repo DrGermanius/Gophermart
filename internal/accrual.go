@@ -94,6 +94,11 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 	}
 
 	bw, err := s.repo.GetBalanceByUserID(ctx, uid)
+	if err != nil {
+		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
+		return
+	}
+
 	newBalance := bw.Balance.Add(res.Accrual)
 
 	err = s.repo.MakeAccrual(ctx, uid, res.Status, orderNumber, res.Accrual, newBalance)
