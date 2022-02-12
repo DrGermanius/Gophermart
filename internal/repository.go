@@ -180,18 +180,18 @@ func (r Repository) GetBalanceByUserID(ctx context.Context, uid int) (BalanceWit
 }
 
 func (r Repository) Withdraw(ctx context.Context, i WithdrawInput, bw BalanceWithdrawn, uid int) error {
-	tx, err := r.conn.Begin(ctx)
-	defer tx.Commit(ctx)
+	//tx, err := r.conn.Begin(ctx)
+	//defer tx.Commit(ctx)
+	//if err != nil {
+	//	return err
+	//}
+
+	_, err := r.conn.Exec(ctx, "INSERT INTO withdraw_history (order_number, user_id, amount, processed_at) VALUES ($1, $2, $3, $4)", i.OrderNumber, uid, i.Sum, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(ctx, "INSERT INTO withdraw_history (order_number, user_id, amount, processed_at) VALUES ($1, $2, $3, $4)", i.OrderNumber, uid, i.Sum, time.Now().Format(time.RFC3339))
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(ctx, "UPDATE users SET balance = $1, withdrawn = $2 WHERE id = $3", bw.Balance, bw.Withdrawn, uid)
+	_, err = r.conn.Exec(ctx, "UPDATE users SET balance = $1, withdrawn = $2 WHERE id = $3", bw.Balance, bw.Withdrawn, uid)
 	if err != nil {
 		return err
 	}
