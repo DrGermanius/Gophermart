@@ -63,7 +63,7 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Length,", "0")
+	req.Header.Set("Content-Length", "0")
 
 	res, err := client.Do(req)
 	if err != nil {
