@@ -242,12 +242,9 @@ func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, ord
 		return err
 	}
 
-	var s float64
-	err = r.conn.QueryRow(ctx, "SELECT accrual FROM orders WHERE number = $1", orderNumber).Scan(&s)
-	if err != nil {
-		return err
-	}
 	r.logger.Infof("SENT ACCRUAL =  %s", accrual.String())
+	var s float64
+	r.GetOrders(ctx, uid)
 	r.logger.Infof("NOW ACCRUAL IS =  %s", s)
 
 	_, err = r.conn.Exec(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
