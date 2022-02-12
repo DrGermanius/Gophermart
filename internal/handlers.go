@@ -65,20 +65,24 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
+		h.logger.Errorf("Error on CreateOrder request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	if c.GetReqHeaders()["Content-Type"] != "text/plain" {
+		h.logger.Errorf("Error on CreateOrder request: %s", "incorrect Content-Type")
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	orderNumber := string(c.Body())
 	if err != nil {
+		h.logger.Errorf("Error on CreateOrder request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	}
 
 	err = h.Service.SendOrder(c.Context(), orderNumber, uid)
 	if err != nil {
+		h.logger.Errorf("Error on CreateOrder request: %s", err.Error())
 		if errors.Is(err, ErrLuhnInvalid) {
 			return c.SendStatus(fiber.StatusUnprocessableEntity)
 		}
@@ -102,6 +106,7 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 
 	orders, err := h.Service.GetOrders(c.Context(), uid)
 	if err != nil {
+		h.logger.Errorf("Error on GetOrders request: %s", err.Error())
 		if errors.Is(err, ErrNoRecords) {
 			return c.SendStatus(fiber.StatusNoContent)
 		}
@@ -114,11 +119,13 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
+		h.logger.Errorf("Error on GetBalance request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	bw, err := h.Service.GetBalanceByUserID(c.Context(), uid)
 	if err != nil {
+		h.logger.Errorf("Error on GetBalance request: %s", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
@@ -128,6 +135,7 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
+		h.logger.Errorf("Error on Withdraw request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
@@ -139,6 +147,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 
 	err = h.Service.Withdraw(c.Context(), i, uid)
 	if err != nil {
+		h.logger.Errorf("Error on Withdraw request: %s", err.Error())
 		if errors.Is(err, ErrLuhnInvalid) {
 			return c.SendStatus(fiber.StatusUnprocessableEntity)
 		}
@@ -154,11 +163,13 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
 	uid, err := getUserIDFromToken(c)
 	if err != nil {
+		h.logger.Errorf("Error on WithdrawHistory request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	wh, err := h.Service.GetWithdrawHistory(c.Context(), uid)
 	if err != nil {
+		h.logger.Errorf("Error on WithdrawHistory request: %s", err.Error())
 		if errors.Is(err, ErrNoRecords) {
 			return c.SendStatus(fiber.StatusNoContent)
 		}
