@@ -62,7 +62,6 @@ func (s Service) SendOrder(ctx context.Context, orderNumber string, uid int) err
 	}
 
 	go s.AccrualService.SendToQueue(ctx, uid, orderNumber)
-	time.Sleep(500 * time.Millisecond)
 	return nil
 }
 

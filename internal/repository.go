@@ -230,25 +230,25 @@ func (r Repository) UpdateOrderStatus(ctx context.Context, orderNumber string, s
 
 func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, orderNumber string, accrual decimal.Decimal, balance decimal.Decimal) error {
 	tx, err := r.conn.Begin(ctx)
-	defer func(tx pgx.Tx, ctx context.Context) {
-		err := tx.Commit(ctx)
-		if err != nil {
-			r.logger.Errorf("COMMIT ERROR") // todo
-		}
-	}(tx, ctx)
+	defer tx.Commit(ctx)
 	if err != nil {
 		return err
 	}
 
 	_, err = tx.Exec(ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3", status, accrual, orderNumber)
 	if err != nil {
+		r.logger.Errorf("EXEC ERROR %s", err)
 		return err
 	}
 
 	_, err = tx.Exec(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
 	if err != nil {
+		r.logger.Errorf("EXEC ERROR %s", err)
 		return err
 	}
 
+	r.logger.Errorf("EXEC SUCCESSFULL")
+	b, err := r.GetBalanceByUserID(ctx, uid)
+	r.logger.Errorf("CURRENT BALANCE : %s", b.Balance)
 	return nil
 }
