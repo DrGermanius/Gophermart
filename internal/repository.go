@@ -239,7 +239,7 @@ func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, ord
 		return err
 	}
 
-	_, err = tx.Exec(ctx, "UPDATE users SET balance = $1 WHERE user_id = $2", balance, uid)
+	_, err = tx.Exec(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
 	if err != nil {
 		return err
 	}
