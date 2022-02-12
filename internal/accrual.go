@@ -121,6 +121,7 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.logger.Errorf("STATUS : %d", res.StatusCode)
 	s.logger.Errorf("JSON : %s", buf.String())
 
 	return buf.Bytes(), nil
