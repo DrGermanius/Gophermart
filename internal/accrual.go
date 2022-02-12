@@ -64,6 +64,9 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 	//todo mutex?????
 	body, err := s.makeRequest(orderNumber)
 	if err != nil {
+		if errors.Is(err, ErrTooManyRequests) {
+			go s.SendToQueue(ctx, uid, orderNumber)
+		}
 		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
 		return
 	}
@@ -72,10 +75,7 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 
 	err = json.Unmarshal(body, &res)
 	if err != nil {
-		if errors.Is(err, ErrTooManyRequests) {
-			go s.SendToQueue(ctx, uid, orderNumber)
-		}
-		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
+		s.logger.Errorf("json.Unmarshal ProcessAccrual error: %s", err.Error())
 		return
 	}
 
