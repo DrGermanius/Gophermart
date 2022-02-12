@@ -79,7 +79,8 @@ func createDatabaseAndTable(c *pgxpool.Pool) error {
 		order_number VARCHAR(255)          NOT NULL REFERENCES orders (number),
 		user_id      INT             NOT NULL REFERENCES users,
 		amount       DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
-		withdrawn    DECIMAL(36, 18) NOT NULL DEFAULT 0.0
+		withdrawn    DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
+   	 	processed_at TIMESTAMP       NOT NULL
 	);`)
 	if err != nil {
 		return err
