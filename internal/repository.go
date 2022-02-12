@@ -242,7 +242,7 @@ func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, ord
 		return err
 	}
 
-	var s string
+	var s float64
 	err = r.conn.QueryRow(ctx, "SELECT accrual FROM orders WHERE number = $1", orderNumber).Scan(&s)
 	if err != nil {
 		return err
