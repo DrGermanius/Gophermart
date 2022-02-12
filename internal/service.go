@@ -23,13 +23,14 @@ type IService interface {
 	GetWithdrawHistory(context.Context, int) ([]WithdrawOutput, error)
 }
 
-func NewService(Repository IRepository, logger *zap.SugaredLogger) *Service {
-	return &Service{Repository: Repository, logger: logger}
+func NewService(Repository IRepository, AccrualService AccrualService, logger *zap.SugaredLogger) *Service {
+	return &Service{Repository: Repository, AccrualService: AccrualService, logger: logger}
 }
 
 type Service struct {
-	Repository IRepository
-	logger     *zap.SugaredLogger
+	Repository     IRepository
+	AccrualService AccrualService
+	logger         *zap.SugaredLogger
 }
 
 func (s Service) SendOrder(ctx context.Context, orderNumber string, uid int) error {
@@ -59,6 +60,8 @@ func (s Service) SendOrder(ctx context.Context, orderNumber string, uid int) err
 	if err != nil {
 		return err
 	}
+
+	go s.AccrualService.GetAccrual(ctx, uid, orderNumber)
 	return nil
 }
 

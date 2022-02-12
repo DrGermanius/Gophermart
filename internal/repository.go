@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -25,6 +26,8 @@ type IRepository interface {
 	GetBalanceByUserID(context.Context, int) (BalanceWithdrawn, error)
 	Withdraw(context.Context, WithdrawInput, BalanceWithdrawn, int) error
 	GetWithdrawHistory(context.Context, int) ([]WithdrawOutput, error)
+	UpdateOrderStatus(context.Context, string, string) error
+	MakeAccrual(context.Context, int, string, string, decimal.Decimal, decimal.Decimal) error
 }
 
 type Repository struct {
@@ -38,10 +41,10 @@ func NewRepository(connString string, logger *zap.SugaredLogger) (*Repository, e
 		return nil, err
 	}
 
-	err = createDatabaseAndTable(conn) //todo migrations?
-	if err != nil {
-		return nil, err
-	}
+	//err = createDatabaseAndTable(conn) //todo migrations?
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return &Repository{conn: conn, logger: logger}, nil
 }
@@ -213,4 +216,33 @@ func (r Repository) GetWithdrawHistory(ctx context.Context, uid int) ([]Withdraw
 	}
 
 	return wh, nil
+}
+
+func (r Repository) UpdateOrderStatus(ctx context.Context, orderNumber string, status string) error {
+	_, err := r.conn.Exec(ctx, "UPDATE orders SET status = $1 WHERE number = $2", status, orderNumber)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, orderNumber string, accrual decimal.Decimal, balance decimal.Decimal) error {
+	tx, err := r.conn.Begin(ctx)
+	defer tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3", status, accrual, orderNumber)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, "UPDATE users SET balance = $1 WHERE user_id = $2", balance, uid)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

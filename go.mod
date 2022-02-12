@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/gofiber/fiber/v2 v2.26.0
-	github.com/gofiber/jwt/v3 v3.2.4
 	github.com/golang-jwt/jwt/v4 v4.2.0
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/shopspring/decimal v1.3.1

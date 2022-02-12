@@ -31,7 +31,8 @@ func main() {
 		sugaredLogger.Fatal(err)
 	}
 
-	service := NewService(repository, sugaredLogger)
+	accrualService := NewAccrualService(repository, sugaredLogger)
+	service := NewService(repository, *accrualService, sugaredLogger) //todo pointer??
 	handlers := NewHandlers(service, sugaredLogger)
 
 	//redundant when cookies are used
