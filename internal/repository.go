@@ -41,10 +41,10 @@ func NewRepository(connString string, logger *zap.SugaredLogger) (*Repository, e
 		return nil, err
 	}
 
-	err = createDatabaseAndTable(conn) //todo migrations?
-	if err != nil {
-		return nil, err
-	}
+	//err = createDatabaseAndTable(conn) //todo migrations?
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return &Repository{conn: conn, logger: logger}, nil
 }
@@ -76,7 +76,7 @@ func createDatabaseAndTable(c *pgxpool.Pool) error {
 	CREATE TABLE withdraw_history
 	(
 		id           SERIAL PRIMARY KEY,
-		order_number VARCHAR(255)          NOT NULL REFERENCES orders (number),
+		order_number VARCHAR(255)    NOT NULL,
 		user_id      INT             NOT NULL REFERENCES users,
 		amount       DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
 		withdrawn    DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
