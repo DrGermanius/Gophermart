@@ -12,6 +12,8 @@ import (
 
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
+
+	"github.com/DrGermanius/Gophermart/internal/model"
 )
 
 type AccrualService struct {
@@ -81,7 +83,7 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 		return
 	}
 
-	if res.Status == OrderStatusRegistered || res.Status == OrderStatusProcessing {
+	if res.Status == model.OrderStatusRegistered || res.Status == model.OrderStatusProcessing {
 		err = s.repo.UpdateOrderStatus(ctx, orderNumber, res.Status)
 		if err != nil {
 			s.logger.Errorf("ProcessAccrual error: %s", err.Error())

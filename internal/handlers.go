@@ -9,6 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
+
+	"github.com/DrGermanius/Gophermart/internal/model"
 )
 
 type Handlers struct {
@@ -21,7 +23,7 @@ func NewHandlers(Service IService, logger *zap.SugaredLogger) *Handlers {
 }
 
 func (h *Handlers) Login(c *fiber.Ctx) error {
-	var i LoginInput
+	var i model.LoginInput
 
 	if err := c.BodyParser(&i); err != nil {
 		h.logger.Errorf("Error on login request: %s", err.Error())
@@ -42,7 +44,7 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) Register(c *fiber.Ctx) error {
-	var i LoginInput
+	var i model.LoginInput
 
 	if err := c.BodyParser(&i); err != nil {
 		h.logger.Errorf("Error on register request: %s", err.Error())
@@ -141,7 +143,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	var i WithdrawInput
+	var i model.WithdrawInput
 
 	if err = c.BodyParser(&i); err != nil || i.OrderNumber == "" || i.Sum.Equal(decimal.NewFromInt(0)) { //todo beautify?
 		return c.SendStatus(fiber.StatusBadRequest)

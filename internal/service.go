@@ -10,6 +10,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/theplant/luhn"
 	"go.uber.org/zap"
+
+	"github.com/DrGermanius/Gophermart/internal/model"
 )
 
 type IService interface {
@@ -17,10 +19,10 @@ type IService interface {
 	Login(context.Context, string, string) (string, error)
 	GetJWTToken(string) (string, error)
 	SendOrder(context.Context, string, int) error
-	GetOrders(context.Context, int) ([]OrderOutput, error)
-	GetBalanceByUserID(context.Context, int) (BalanceWithdrawn, error)
-	Withdraw(context.Context, WithdrawInput, int) error
-	GetWithdrawHistory(context.Context, int) ([]WithdrawOutput, error)
+	GetOrders(context.Context, int) ([]model.OrderOutput, error)
+	GetBalanceByUserID(context.Context, int) (model.BalanceWithdrawn, error)
+	Withdraw(context.Context, model.WithdrawInput, int) error
+	GetWithdrawHistory(context.Context, int) ([]model.WithdrawOutput, error)
 }
 
 func NewService(Repository IRepository, AccrualService AccrualService, logger *zap.SugaredLogger) *Service {
@@ -118,7 +120,7 @@ func (s Service) GetJWTToken(uid string) (string, error) {
 	return t, nil
 }
 
-func (s Service) GetOrders(ctx context.Context, uid int) ([]OrderOutput, error) {
+func (s Service) GetOrders(ctx context.Context, uid int) ([]model.OrderOutput, error) {
 	orders, err := s.Repository.GetOrders(ctx, uid)
 	if err != nil {
 		return nil, err
@@ -130,7 +132,7 @@ func (s Service) GetOrders(ctx context.Context, uid int) ([]OrderOutput, error) 
 	return orders, nil
 }
 
-func (s Service) GetBalanceByUserID(ctx context.Context, uid int) (BalanceWithdrawn, error) {
+func (s Service) GetBalanceByUserID(ctx context.Context, uid int) (model.BalanceWithdrawn, error) {
 	bw, err := s.Repository.GetBalanceByUserID(ctx, uid)
 	if err != nil {
 		return bw, err
@@ -139,7 +141,7 @@ func (s Service) GetBalanceByUserID(ctx context.Context, uid int) (BalanceWithdr
 	return bw, nil
 }
 
-func (s Service) Withdraw(ctx context.Context, i WithdrawInput, uid int) error {
+func (s Service) Withdraw(ctx context.Context, i model.WithdrawInput, uid int) error {
 	//todo is we need mutex here?
 
 	o, err := strconv.Atoi(i.OrderNumber)
@@ -160,7 +162,7 @@ func (s Service) Withdraw(ctx context.Context, i WithdrawInput, uid int) error {
 		return ErrInsufficientFunds
 	}
 
-	newBw := BalanceWithdrawn{
+	newBw := model.BalanceWithdrawn{
 		Balance:   bw.Balance.Sub(i.Sum),
 		Withdrawn: bw.Withdrawn.Add(i.Sum),
 	}
@@ -173,7 +175,7 @@ func (s Service) Withdraw(ctx context.Context, i WithdrawInput, uid int) error {
 	return nil
 }
 
-func (s Service) GetWithdrawHistory(ctx context.Context, uid int) ([]WithdrawOutput, error) {
+func (s Service) GetWithdrawHistory(ctx context.Context, uid int) ([]model.WithdrawOutput, error) {
 	wh, err := s.Repository.GetWithdrawHistory(ctx, uid)
 	if err != nil {
 		return nil, err
