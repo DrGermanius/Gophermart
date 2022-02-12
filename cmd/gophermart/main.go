@@ -12,7 +12,7 @@ import (
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 
-	. "github.com/DrGermanius/Gophermart/internal"
+	app "github.com/DrGermanius/Gophermart/internal"
 )
 
 func main() {
@@ -20,23 +20,23 @@ func main() {
 	//https://github.com/shopspring/decimal/issues/21
 	decimal.MarshalJSONWithoutQuotes = true
 
-	cfg := NewConfig()
+	cfg := app.NewConfig()
 	z, err := zap.NewProduction()
 	if err != nil {
 		log.Fatal(err)
 	}
 	sugaredLogger := z.Sugar()
 
-	repository, err := NewRepository(cfg.DatabaseURI, sugaredLogger)
+	repository, err := app.NewRepository(cfg.DatabaseURI, sugaredLogger)
 	if err != nil {
 		sugaredLogger.Fatal(err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	accrualService := NewAccrualService(repository, cfg.AccrualSystemAddress, ctx, sugaredLogger)
-	service := NewService(repository, *accrualService, sugaredLogger) //todo pointer??
-	handlers := NewHandlers(service, sugaredLogger)
+	accrualService := app.NewAccrualService(repository, cfg.AccrualSystemAddress, ctx, sugaredLogger)
+	service := app.NewService(repository, *accrualService, sugaredLogger) //todo pointer??
+	handlers := app.NewHandlers(service, sugaredLogger)
 
 	app := fiber.New()
 	app.Use(logger.New())
