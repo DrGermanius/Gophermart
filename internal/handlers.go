@@ -69,6 +69,8 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
+	h.logger.Errorf("UID : %d", uid)
+
 	if c.GetReqHeaders()["Content-Type"] != "text/plain" {
 		h.logger.Errorf("Error on CreateOrder request: %s", "incorrect Content-Type")
 		return c.SendStatus(fiber.StatusBadRequest)
@@ -122,6 +124,8 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 		h.logger.Errorf("Error on GetBalance request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
+
+	h.logger.Errorf("UID : %d", uid)
 
 	bw, err := h.Service.GetBalanceByUserID(c.Context(), uid)
 	if err != nil {
@@ -202,5 +206,6 @@ func getUserIDFromToken(c *fiber.Ctx) (int, error) {
 	}
 
 	id := claims["id"].(string)
+
 	return strconv.Atoi(id)
 }

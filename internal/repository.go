@@ -229,6 +229,7 @@ func (r Repository) UpdateOrderStatus(ctx context.Context, orderNumber string, s
 }
 
 func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, orderNumber string, accrual decimal.Decimal, balance decimal.Decimal) error {
+	r.logger.Errorf("UID : %d", uid)
 	tx, err := r.conn.Begin(ctx)
 	defer tx.Commit(ctx)
 	if err != nil {
