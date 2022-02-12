@@ -112,7 +112,7 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == http.StatusTooManyRequests {
+	if res.StatusCode != http.StatusOK {
 		return nil, ErrTooManyRequests
 	}
 
