@@ -69,8 +69,6 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	h.logger.Errorf("UID : %d", uid)
-
 	if c.GetReqHeaders()["Content-Type"] != "text/plain" {
 		h.logger.Errorf("Error on CreateOrder request: %s", "incorrect Content-Type")
 		return c.SendStatus(fiber.StatusBadRequest)
@@ -115,7 +113,7 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	h.logger.Errorf("ORDERS: %s", orders)
+	h.logger.Infof("ORDERS: %s", orders)
 	return c.Status(fiber.StatusOK).JSON(orders)
 }
 
@@ -126,15 +124,13 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	h.logger.Errorf("UID : %d", uid)
-
 	bw, err := h.Service.GetBalanceByUserID(c.Context(), uid)
 	if err != nil {
 		h.logger.Errorf("Error on GetBalance request: %s", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	h.logger.Errorf("BALANCE: %s", bw)
+	h.logger.Infof("BALANCE: %s", bw)
 	return c.Status(fiber.StatusOK).JSON(bw)
 }
 
@@ -182,7 +178,7 @@ func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	h.logger.Errorf("WITHDRAWS: %s", wh)
+	h.logger.Infof("WITHDRAWS: %s", wh)
 	return c.Status(fiber.StatusOK).JSON(wh)
 }
 
