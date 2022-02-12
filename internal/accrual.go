@@ -97,6 +97,7 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 	newBalance := bw.Balance.Add(res.Accrual)
 
 	s.logger.Errorf("%s", "MAKE ACCRUAL CALLED")
+	s.logger.Errorf("BALANCE: %s", newBalance)
 	err = s.repo.MakeAccrual(ctx, uid, res.Status, orderNumber, res.Accrual, newBalance)
 	if err != nil {
 		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
