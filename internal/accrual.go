@@ -15,10 +15,11 @@ import (
 type AccrualService struct {
 	repo   IRepository
 	logger *zap.SugaredLogger
+	url    string
 }
 
-func NewAccrualService(repo IRepository, logger *zap.SugaredLogger) *AccrualService {
-	return &AccrualService{repo: repo, logger: logger}
+func NewAccrualService(repo IRepository, logger *zap.SugaredLogger, url string) *AccrualService {
+	return &AccrualService{repo: repo, logger: logger, url: url}
 }
 
 func (s AccrualService) GetAccrual(ctx context.Context, uid int, orderNumber string) {
@@ -57,7 +58,7 @@ func (s AccrualService) GetAccrual(ctx context.Context, uid int, orderNumber str
 func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 	client := &http.Client{}
 
-	url := "/api/orders/" + orderNumber
+	url := s.url + "/api/orders/" + orderNumber
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(""))
 	if err != nil {
 		return nil, err

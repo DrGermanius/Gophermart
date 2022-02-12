@@ -31,7 +31,7 @@ func main() {
 		sugaredLogger.Fatal(err)
 	}
 
-	accrualService := NewAccrualService(repository, sugaredLogger)
+	accrualService := NewAccrualService(repository, sugaredLogger, cfg.AccrualSystemAddress)
 	service := NewService(repository, *accrualService, sugaredLogger) //todo pointer??
 	handlers := NewHandlers(service, sugaredLogger)
 
