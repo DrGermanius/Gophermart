@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -31,17 +32,11 @@ func main() {
 		sugaredLogger.Fatal(err)
 	}
 
-	accrualService := NewAccrualService(repository, sugaredLogger, cfg.AccrualSystemAddress)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	accrualService := NewAccrualService(repository, cfg.AccrualSystemAddress, ctx, sugaredLogger)
 	service := NewService(repository, *accrualService, sugaredLogger) //todo pointer??
 	handlers := NewHandlers(service, sugaredLogger)
-
-	//redundant when cookies are used
-	//jwtMiddleware := jwtware.New(jwtware.Config{
-	//	ErrorHandler: func(c *fiber.Ctx, err error) error {
-	//		return c.Status(fiber.StatusUnauthorized).SendString("Invalid or expired JWT")
-	//	},
-	//	SigningKey: []byte("secret"),
-	//})
 
 	app := fiber.New()
 	app.Use(logger.New())

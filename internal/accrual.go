@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -14,20 +15,56 @@ import (
 
 type AccrualService struct {
 	repo   IRepository
-	logger *zap.SugaredLogger
 	url    string
+	ch     chan input
+	ctx    context.Context
+	logger *zap.SugaredLogger
 }
 
-func NewAccrualService(repo IRepository, logger *zap.SugaredLogger, url string) *AccrualService {
-	return &AccrualService{repo: repo, logger: logger, url: url}
+func NewAccrualService(repo IRepository, url string, ctx context.Context, logger *zap.SugaredLogger) *AccrualService {
+	s := &AccrualService{
+		repo:   repo,
+		url:    url,
+		ch:     make(chan input),
+		ctx:    ctx,
+		logger: logger,
+	}
+
+	go s.Run()
+	return s
 }
 
-func (s AccrualService) GetAccrual(ctx context.Context, uid int, orderNumber string) {
+type input struct {
+	uid         int
+	orderNumber string
+	ctx         context.Context
+}
+
+func (s AccrualService) Run() {
+	for {
+		select {
+		case v := <-s.ch:
+			s.ProcessAccrual(v.ctx, v.uid, v.orderNumber)
+		case <-s.ctx.Done():
+			s.logger.Info("context is done")
+			return
+		}
+	}
+}
+
+func (s AccrualService) SendToQueue(ctx context.Context, uid int, orderNumber string) {
+	s.ch <- input{
+		uid:         uid,
+		orderNumber: orderNumber,
+		ctx:         ctx,
+	}
+}
+
+func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber string) {
 	//todo mutex?????
-	//todo restart when: 1) too many requests; 2) status order != INVALID || != PROCESSED
 	body, err := s.makeRequest(orderNumber)
 	if err != nil {
-		s.logger.Errorf("GetAccrual error: %s", err.Error())
+		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
 		return
 	}
 
@@ -35,13 +72,17 @@ func (s AccrualService) GetAccrual(ctx context.Context, uid int, orderNumber str
 
 	err = json.Unmarshal(body, &res)
 	if err != nil {
-		s.logger.Errorf("GetAccrual error: %s", err.Error())
+		if errors.Is(err, ErrTooManyRequests) {
+			go s.SendToQueue(ctx, uid, orderNumber)
+		}
+		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
 		return
 	}
 
-	if res.Accrual.Equal(decimal.NewFromInt(0)) {
+	if res.Status == OrderStatusRegistered || res.Status == OrderStatusProcessing {
 		err = s.repo.UpdateOrderStatus(ctx, orderNumber, res.Status)
-		//return
+		go s.SendToQueue(ctx, uid, orderNumber)
+		return
 	}
 
 	bw, err := s.repo.GetBalanceByUserID(ctx, uid)
@@ -49,7 +90,7 @@ func (s AccrualService) GetAccrual(ctx context.Context, uid int, orderNumber str
 
 	err = s.repo.MakeAccrual(ctx, uid, res.Status, orderNumber, res.Accrual, newBalance)
 	if err != nil {
-		s.logger.Errorf("GetAccrual error: %s", err.Error())
+		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
 		return
 	}
 

@@ -61,7 +61,7 @@ func (s Service) SendOrder(ctx context.Context, orderNumber string, uid int) err
 		return err
 	}
 
-	go s.AccrualService.GetAccrual(ctx, uid, orderNumber)
+	go s.AccrualService.SendToQueue(ctx, uid, orderNumber)
 	return nil
 }
 
