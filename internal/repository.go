@@ -253,6 +253,6 @@ func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, ord
 	if err != nil {
 		r.logger.Errorf("error : %s", err.Error())
 	}
-	r.logger.Errorf("CURRENT BALANCE : %s", b.Balance)
+	r.logger.Errorf("CURRENT BALANCE : %s", b.Balance.String())
 	return nil
 }
