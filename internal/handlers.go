@@ -115,6 +115,7 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
+	h.logger.Errorf("ORDERS: %s", orders)
 	return c.Status(fiber.StatusOK).JSON(orders)
 }
 
@@ -133,6 +134,7 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
+	h.logger.Errorf("BALANCE: %s", bw)
 	return c.Status(fiber.StatusOK).JSON(bw)
 }
 
@@ -180,6 +182,7 @@ func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
+	h.logger.Errorf("WITHDRAWS: %s", wh)
 	return c.Status(fiber.StatusOK).JSON(wh)
 }
 

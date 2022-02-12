@@ -235,24 +235,14 @@ func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, ord
 	//	return err
 	//}
 
-	r.logger.Errorf("UID: %d, BALANCE : %s", uid, balance.String())
 	_, err := r.conn.Exec(ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3", status, accrual, orderNumber)
 	if err != nil {
-		r.logger.Errorf("EXEC ERROR %s", err)
 		return err
 	}
 
 	_, err = r.conn.Exec(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
 	if err != nil {
-		r.logger.Errorf("EXEC ERROR %s", err)
 		return err
 	}
-
-	r.logger.Errorf("EXEC SUCCESSFULL")
-	b, err := r.GetBalanceByUserID(ctx, uid)
-	if err != nil {
-		r.logger.Errorf("error : %s", err.Error())
-	}
-	r.logger.Errorf("CURRENT BALANCE : %s", b.Balance.String())
 	return nil
 }

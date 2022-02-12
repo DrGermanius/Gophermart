@@ -81,8 +81,6 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 		return
 	}
 
-	s.logger.Errorf("STATUS  : %s", res.Status)
-	s.logger.Errorf("AMOUNT %s", res.Accrual)
 	if res.Status == OrderStatusRegistered || res.Status == OrderStatusProcessing {
 		err = s.repo.UpdateOrderStatus(ctx, orderNumber, res.Status)
 		if err != nil {
@@ -96,14 +94,11 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 	bw, err := s.repo.GetBalanceByUserID(ctx, uid)
 	newBalance := bw.Balance.Add(res.Accrual)
 
-	s.logger.Errorf("%s", "MAKE ACCRUAL CALLED")
-	s.logger.Errorf("BALANCE: %s", newBalance)
 	err = s.repo.MakeAccrual(ctx, uid, res.Status, orderNumber, res.Accrual, newBalance)
 	if err != nil {
 		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
 		return
 	}
-	s.logger.Errorf("%s", "MAKE ACCRUAL END")
 }
 
 func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
@@ -121,9 +116,7 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-	s.logger.Errorf("URL : %s", url)
 
-	s.logger.Errorf("STATUS : %d", res.StatusCode)
 	if res.StatusCode != http.StatusOK {
 		return nil, ErrTooManyRequests
 	}
@@ -136,7 +129,6 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.logger.Errorf("JSON : %s", buf.String())
 
 	return buf.Bytes(), nil
 }
