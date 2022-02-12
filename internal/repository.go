@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	orderFields    = "number, user_id, status, uploaded_at"
+	orderFields    = "number, accrual, status, uploaded_at"
 	withdrawFields = "order_number, amount, processed_at"
 )
 
