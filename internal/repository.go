@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	orderFields    = "number, accrual, status, uploaded_at"
 	withdrawFields = "order_number, amount, processed_at"
 )
 
@@ -130,7 +129,7 @@ func (r Repository) CheckCredentials(ctx context.Context, login string, password
 
 func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (model.Order, error) {
 	var o model.Order
-	row := r.conn.QueryRow(ctx, "SELECT "+orderFields+" FROM orders WHERE number = $1", orderNumber) //todo sqlx
+	row := r.conn.QueryRow(ctx, "SELECT number, user_id, status, uploaded_at FROM orders WHERE number = $1", orderNumber) //todo sqlx
 	err := row.Scan(&o.Number, &o.UserID, &o.Status, &o.UploadedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -151,7 +150,7 @@ func (r Repository) SendOrder(ctx context.Context, orderNumber string, userID in
 }
 
 func (r Repository) GetOrders(ctx context.Context, uid int) ([]model.OrderOutput, error) {
-	rows, err := r.conn.Query(ctx, "SELECT "+orderFields+" FROM orders WHERE user_id = $1 ORDER BY uploaded_at DESC", uid)
+	rows, err := r.conn.Query(ctx, "SELECT number, accrual, status, uploaded_at FROM orders WHERE user_id = $1 ORDER BY uploaded_at DESC", uid)
 	if err != nil {
 		return nil, err
 	}
