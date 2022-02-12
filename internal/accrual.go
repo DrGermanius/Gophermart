@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
@@ -45,6 +46,7 @@ func (s AccrualService) Run() {
 		select {
 		case v := <-s.ch:
 			s.ProcessAccrual(v.ctx, v.uid, v.orderNumber)
+			time.Sleep(1 * time.Second) // avoid too many requests
 		case <-s.ctx.Done():
 			s.logger.Info("context is done")
 			return
@@ -67,7 +69,7 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 		if errors.Is(err, ErrTooManyRequests) {
 			go s.SendToQueue(ctx, uid, orderNumber)
 		}
-		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
+		//s.logger.Errorf("ProcessAccrual error: %s", err.Error())
 		return
 	}
 
@@ -111,17 +113,21 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
+	s.logger.Errorf("URL : %s", url)
 
+	s.logger.Errorf("STATUS : %d", res.StatusCode)
 	if res.StatusCode != http.StatusOK {
 		return nil, ErrTooManyRequests
 	}
+	//if res.StatusCode != http.StatusOK {
+	//	return nil, ErrUnknownResponseFromAccrualSystem
+	//}
 
 	var buf bytes.Buffer
 	_, err = io.Copy(&buf, res.Body)
 	if err != nil {
 		return nil, err
 	}
-	s.logger.Errorf("STATUS : %d", res.StatusCode)
 	s.logger.Errorf("JSON : %s", buf.String())
 
 	return buf.Bytes(), nil
