@@ -50,11 +50,11 @@ func NewRepository(connString string, logger *zap.SugaredLogger) (*Repository, e
 }
 
 func createDatabaseAndTable(c *pgxpool.Pool) error {
-	_, err := c.Exec(context.Background(), "CREATE DATABASE mart2")
-	if err != nil {
-		return err
-	}
-	_, err = c.Exec(context.Background(), `CREATE TABLE users
+	//_, err := c.Exec(context.Background(), "CREATE DATABASE mart2") //todo
+	//if err != nil {
+	//	return err
+	//}
+	_, err := c.Exec(context.Background(), `CREATE TABLE users
 	(
 		id       SERIAL PRIMARY KEY,
 		login    VARCHAR(255)    NOT NULL,
