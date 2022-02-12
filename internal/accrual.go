@@ -1,11 +1,10 @@
 package internal
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -116,13 +115,14 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 		return nil, ErrTooManyRequests
 	}
 
-	var buf bytes.Buffer
-	_, err = io.Copy(&buf, res.Body)
+	//var buf bytes.Buffer
+	//_, err = io.Copy(&buf, res.Body)
+	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return b, nil
 }
 
 type accrualResponse struct {
