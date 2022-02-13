@@ -113,7 +113,7 @@ func (s Service) GetJWTToken(uid string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	t, err := token.SignedString(s.secret) //todo secret
+	t, err := token.SignedString([]byte(s.secret)) //todo secret
 	if err != nil {
 		return "", err
 	}
