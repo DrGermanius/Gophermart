@@ -151,18 +151,18 @@ func (r Repository) GetBalanceByUserID(ctx context.Context, uid int) (model.Bala
 }
 
 func (r Repository) Withdraw(ctx context.Context, i model.WithdrawInput, bw model.BalanceWithdrawn, uid int) error {
-	//tx, err := r.conn.Begin(ctx) //todo
-	//defer tx.Commit(ctx)
-	//if err != nil {
-	//	return err
-	//}
-
-	_, err := r.conn.ExecContext(ctx, "INSERT INTO withdraw_history (order_number, user_id, amount, processed_at) VALUES ($1, $2, $3, $4)", i.OrderNumber, uid, i.Sum, time.Now().Format(time.RFC3339))
+	tx, err := r.conn.Begin()
+	defer tx.Commit()
 	if err != nil {
 		return err
 	}
 
-	_, err = r.conn.ExecContext(ctx, "UPDATE users SET balance = $1, withdrawn = $2 WHERE id = $3", bw.Balance, bw.Withdrawn, uid)
+	_, err = tx.ExecContext(ctx, "INSERT INTO withdraw_history (order_number, user_id, amount, processed_at) VALUES ($1, $2, $3, $4)", i.OrderNumber, uid, i.Sum, time.Now().Format(time.RFC3339))
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "UPDATE users SET balance = $1, withdrawn = $2 WHERE id = $3", bw.Balance, bw.Withdrawn, uid)
 	if err != nil {
 		return err
 	}
@@ -204,18 +204,18 @@ func (r Repository) UpdateOrderStatus(ctx context.Context, orderNumber string, s
 }
 
 func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, orderNumber string, accrual decimal.Decimal, balance decimal.Decimal) error {
-	/*	tx, err := r.conn.Begin(ctx) //todo trx?
-		defer tx.Commit(ctx)*/
-	//if err != nil {
-	//	return err
-	//}
-
-	_, err := r.conn.ExecContext(ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3", status, accrual, orderNumber)
+	tx, err := r.conn.Begin()
+	defer tx.Commit()
 	if err != nil {
 		return err
 	}
 
-	_, err = r.conn.ExecContext(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
+	_, err = tx.ExecContext(ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3", status, accrual, orderNumber)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
 	if err != nil {
 		return err
 	}
