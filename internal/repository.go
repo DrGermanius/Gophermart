@@ -121,6 +121,10 @@ func (r Repository) GetOrders(ctx context.Context, uid int) ([]model.OrderOutput
 		return nil, err
 	}
 
+	if rows.Err() != nil {
+		return nil, err
+	}
+
 	var orders []model.OrderOutput
 	for rows.Next() {
 		var o model.OrderOutput
@@ -169,6 +173,10 @@ func (r Repository) Withdraw(ctx context.Context, i model.WithdrawInput, bw mode
 func (r Repository) GetWithdrawHistory(ctx context.Context, uid int) ([]model.WithdrawOutput, error) {
 	rows, err := r.conn.QueryContext(ctx, "SELECT "+withdrawFields+" FROM withdraw_history WHERE user_id = $1 ORDER BY processed_at DESC", uid)
 	if err != nil {
+		return nil, err
+	}
+
+	if rows.Err() != nil {
 		return nil, err
 	}
 
