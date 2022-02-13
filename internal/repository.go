@@ -2,13 +2,16 @@ package internal
 
 import (
 	"context"
+	"database/sql"
+	"embed"
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pressly/goose/v3"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
+
+	_ "github.com/jackc/pgx/v4/stdlib"
 
 	"github.com/DrGermanius/Gophermart/internal/model"
 )
@@ -32,66 +35,29 @@ type IRepository interface {
 }
 
 type Repository struct {
-	conn   *pgxpool.Pool
+	conn   *sql.DB
 	logger *zap.SugaredLogger
 }
 
-func NewRepository(connString string, logger *zap.SugaredLogger) (*Repository, error) {
-	conn, err := pgxpool.Connect(context.Background(), connString)
+func NewRepository(connString string, embedMigrations embed.FS, logger *zap.SugaredLogger) (*Repository, error) {
+	db, err := sql.Open("pgx", connString)
 	if err != nil {
 		return nil, err
 	}
 
-	err = createDatabaseAndTable(conn) //todo migrations?
+	goose.SetBaseFS(embedMigrations)
+
+	err = goose.Up(db, "migrations")
 	if err != nil {
 		return nil, err
 	}
 
-	return &Repository{conn: conn, logger: logger}, nil
-}
-
-func createDatabaseAndTable(c *pgxpool.Pool) error {
-	//_, err := c.Exec(context.Background(), "CREATE DATABASE mart2") //todo
-	//if err != nil {
-	//	return err
-	//}
-	_, err := c.Exec(context.Background(), `CREATE TABLE users
-	(
-		id       SERIAL PRIMARY KEY,
-		login    VARCHAR(255)    NOT NULL,
-		password VARCHAR(255)    NOT NULL,
-		balance  DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
-    	withdrawn DECIMAL(36, 18) NOT NULL DEFAULT 0.0
-	);
-	
-	CREATE TABLE orders
-	(
-		id          SERIAL PRIMARY KEY,
-		number      VARCHAR(255) UNIQUE   NOT NULL,
-		user_id     INT             NOT NULL REFERENCES users,
-		accrual     DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
-		status      VARCHAR(255)    NOT NULL,
-		uploaded_at TIMESTAMP       NOT NULL
-	);
-	
-	CREATE TABLE withdraw_history
-	(
-		id           SERIAL PRIMARY KEY,
-		order_number VARCHAR(255)    NOT NULL,
-		user_id      INT             NOT NULL REFERENCES users,
-		amount       DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
-		withdrawn    DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
-   	 	processed_at TIMESTAMP       NOT NULL
-	);`)
-	if err != nil {
-		return err
-	}
-	return nil
+	return &Repository{conn: db, logger: logger}, nil
 }
 
 func (r Repository) Register(ctx context.Context, login, password string) (int, error) {
 	var id int
-	row := r.conn.QueryRow(ctx, "INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id", login, password)
+	row := r.conn.QueryRowContext(ctx, "INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id", login, password)
 
 	err := row.Scan(&id)
 	if err != nil {
@@ -103,7 +69,7 @@ func (r Repository) Register(ctx context.Context, login, password string) (int, 
 func (r Repository) IsUserExist(ctx context.Context, login string) (bool, error) {
 	exist := false
 
-	row := r.conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE  login=$1)", login)
+	row := r.conn.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE  login=$1)", login)
 	err := row.Scan(&exist)
 	if err != nil {
 		return false, err
@@ -114,10 +80,10 @@ func (r Repository) IsUserExist(ctx context.Context, login string) (bool, error)
 
 func (r Repository) CheckCredentials(ctx context.Context, login string, password string) (int, error) {
 	var id int
-	row := r.conn.QueryRow(ctx, "SELECT id FROM users WHERE login = $1 AND password = $2", login, password)
+	row := r.conn.QueryRowContext(ctx, "SELECT id FROM users WHERE login = $1 AND password = $2", login, password)
 
 	err := row.Scan(&id)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return 0, ErrInvalidCredentials
 	}
 	if err != nil {
@@ -129,10 +95,10 @@ func (r Repository) CheckCredentials(ctx context.Context, login string, password
 
 func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (model.Order, error) {
 	var o model.Order
-	row := r.conn.QueryRow(ctx, "SELECT number, user_id, status, uploaded_at FROM orders WHERE number = $1", orderNumber) //todo sqlx
+	row := r.conn.QueryRowContext(ctx, "SELECT number, user_id, status, uploaded_at FROM orders WHERE number = $1", orderNumber) //todo sqlx
 	err := row.Scan(&o.Number, &o.UserID, &o.Status, &o.UploadedAt)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return model.Order{UserID: -1}, nil //todo magic number
 		}
 		return model.Order{}, err
@@ -142,7 +108,7 @@ func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (model
 }
 
 func (r Repository) SendOrder(ctx context.Context, orderNumber string, userID int) error {
-	_, err := r.conn.Exec(ctx, "INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)", orderNumber, userID, model.OrderStatusNew, time.Now().Format(time.RFC3339))
+	_, err := r.conn.ExecContext(ctx, "INSERT INTO orders (number, user_id, status, uploaded_at) VALUES ($1, $2, $3, $4)", orderNumber, userID, model.OrderStatusNew, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
 	}
@@ -150,7 +116,7 @@ func (r Repository) SendOrder(ctx context.Context, orderNumber string, userID in
 }
 
 func (r Repository) GetOrders(ctx context.Context, uid int) ([]model.OrderOutput, error) {
-	rows, err := r.conn.Query(ctx, "SELECT number, accrual, status, uploaded_at FROM orders WHERE user_id = $1 ORDER BY uploaded_at DESC", uid)
+	rows, err := r.conn.QueryContext(ctx, "SELECT number, accrual, status, uploaded_at FROM orders WHERE user_id = $1 ORDER BY uploaded_at DESC", uid)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +138,7 @@ func (r Repository) GetOrders(ctx context.Context, uid int) ([]model.OrderOutput
 func (r Repository) GetBalanceByUserID(ctx context.Context, uid int) (model.BalanceWithdrawn, error) {
 	var bw model.BalanceWithdrawn
 
-	err := r.conn.QueryRow(ctx, "SELECT balance, withdrawn FROM users WHERE id = $1", uid).Scan(&bw.Balance, &bw.Withdrawn)
+	err := r.conn.QueryRowContext(ctx, "SELECT balance, withdrawn FROM users WHERE id = $1", uid).Scan(&bw.Balance, &bw.Withdrawn)
 	if err != nil {
 		return model.BalanceWithdrawn{}, err
 	}
@@ -181,18 +147,18 @@ func (r Repository) GetBalanceByUserID(ctx context.Context, uid int) (model.Bala
 }
 
 func (r Repository) Withdraw(ctx context.Context, i model.WithdrawInput, bw model.BalanceWithdrawn, uid int) error {
-	//tx, err := r.conn.Begin(ctx)
+	//tx, err := r.conn.Begin(ctx) //todo
 	//defer tx.Commit(ctx)
 	//if err != nil {
 	//	return err
 	//}
 
-	_, err := r.conn.Exec(ctx, "INSERT INTO withdraw_history (order_number, user_id, amount, processed_at) VALUES ($1, $2, $3, $4)", i.OrderNumber, uid, i.Sum, time.Now().Format(time.RFC3339))
+	_, err := r.conn.ExecContext(ctx, "INSERT INTO withdraw_history (order_number, user_id, amount, processed_at) VALUES ($1, $2, $3, $4)", i.OrderNumber, uid, i.Sum, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
 	}
 
-	_, err = r.conn.Exec(ctx, "UPDATE users SET balance = $1, withdrawn = $2 WHERE id = $3", bw.Balance, bw.Withdrawn, uid)
+	_, err = r.conn.ExecContext(ctx, "UPDATE users SET balance = $1, withdrawn = $2 WHERE id = $3", bw.Balance, bw.Withdrawn, uid)
 	if err != nil {
 		return err
 	}
@@ -201,7 +167,7 @@ func (r Repository) Withdraw(ctx context.Context, i model.WithdrawInput, bw mode
 }
 
 func (r Repository) GetWithdrawHistory(ctx context.Context, uid int) ([]model.WithdrawOutput, error) {
-	rows, err := r.conn.Query(ctx, "SELECT "+withdrawFields+" FROM withdraw_history WHERE user_id = $1 ORDER BY processed_at DESC", uid)
+	rows, err := r.conn.QueryContext(ctx, "SELECT "+withdrawFields+" FROM withdraw_history WHERE user_id = $1 ORDER BY processed_at DESC", uid)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +187,7 @@ func (r Repository) GetWithdrawHistory(ctx context.Context, uid int) ([]model.Wi
 }
 
 func (r Repository) UpdateOrderStatus(ctx context.Context, orderNumber string, status string) error {
-	_, err := r.conn.Exec(ctx, "UPDATE orders SET status = $1 WHERE number = $2", status, orderNumber)
+	_, err := r.conn.ExecContext(ctx, "UPDATE orders SET status = $1 WHERE number = $2", status, orderNumber)
 	if err != nil {
 		return err
 	}
@@ -236,16 +202,12 @@ func (r Repository) MakeAccrual(ctx context.Context, uid int, status string, ord
 	//	return err
 	//}
 
-	_, err := r.conn.Exec(ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3", status, accrual, orderNumber)
+	_, err := r.conn.ExecContext(ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3", status, accrual, orderNumber)
 	if err != nil {
 		return err
 	}
 
-	r.logger.Infof("SENT ACCRUAL =  %s", accrual.String())
-	o, _ := r.GetOrders(ctx, uid)
-	r.logger.Infof("NOW ACCRUAL IS =  %s", o)
-
-	_, err = r.conn.Exec(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
+	_, err = r.conn.ExecContext(ctx, "UPDATE users SET balance = $1 WHERE id = $2", balance, uid)
 	if err != nil {
 		return err
 	}

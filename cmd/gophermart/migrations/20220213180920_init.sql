@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE users
 (
     id        SERIAL PRIMARY KEY,
@@ -25,3 +27,11 @@ CREATE TABLE withdraw_history
     amount       DECIMAL(36, 18) NOT NULL DEFAULT 0.0,
     processed_at TIMESTAMP       NOT NULL
 );
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE users;
+DROP TABLE orders;
+DROP TABLE withdraw_history;
+-- +goose StatementEnd

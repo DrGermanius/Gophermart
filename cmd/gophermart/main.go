@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"log"
 	"os"
 	"os/signal"
@@ -15,6 +16,9 @@ import (
 	app "github.com/DrGermanius/Gophermart/internal"
 )
 
+//go:embed migrations/*.sql
+var embedMigrations embed.FS
+
 func main() {
 	//decimals at json as string
 	//https://github.com/shopspring/decimal/issues/21
@@ -27,7 +31,7 @@ func main() {
 	}
 	sugaredLogger := z.Sugar()
 
-	repository, err := app.NewRepository(cfg.DatabaseURI, sugaredLogger)
+	repository, err := app.NewRepository(cfg.DatabaseURI, embedMigrations, sugaredLogger)
 	if err != nil {
 		sugaredLogger.Fatal(err)
 	}
