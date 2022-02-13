@@ -12,11 +12,13 @@ const (
 	RunAddress           = "RUN_ADDRESS"
 	DatabaseURI          = "DATABASE_URI"
 	AccrualSystemAddress = "ACCRUAL_SYSTEM_ADDRESS"
+	JWTSecret            = "JWT_Secret"
 )
 
 const (
 	defaultRunAddress           = "localhost:8081"
 	defaultAccrualSystemAddress = "http://localhost:8080"
+	defaultJWTSecret            = "secret"
 )
 
 const (
@@ -30,6 +32,7 @@ type config struct {
 	RunAddress           string
 	DatabaseURI          string
 	AccrualSystemAddress string
+	JWTSecret            string
 }
 
 func NewConfig() *config {
@@ -42,6 +45,7 @@ func NewConfig() *config {
 	flag.StringVar(&c.RunAddress, "a", setEnvOrDefault(RunAddress, defaultRunAddress), "host to listen on")
 	flag.StringVar(&c.DatabaseURI, "d", setEnvOrDefault(DatabaseURI, defaultConn), "postgres connection path")
 	flag.StringVar(&c.AccrualSystemAddress, "r", setEnvOrDefault(AccrualSystemAddress, defaultAccrualSystemAddress), "Accrual system address")
+	flag.StringVar(&c.JWTSecret, "s", setEnvOrDefault(JWTSecret, defaultJWTSecret), "JWT secret")
 
 	flag.Parse()
 	return c

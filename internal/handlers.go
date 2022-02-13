@@ -14,12 +14,13 @@ import (
 )
 
 type Handlers struct {
-	Service IService
+	service IService
+	secret  string
 	logger  *zap.SugaredLogger
 }
 
-func NewHandlers(Service IService, logger *zap.SugaredLogger) *Handlers {
-	return &Handlers{Service: Service, logger: logger}
+func NewHandlers(Service IService, secret string, logger *zap.SugaredLogger) *Handlers {
+	return &Handlers{service: Service, secret: secret, logger: logger}
 }
 
 func (h *Handlers) Login(c *fiber.Ctx) error {
@@ -30,7 +31,7 @@ func (h *Handlers) Login(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	t, err := h.Service.Login(c.Context(), i.Login, i.Password)
+	t, err := h.service.Login(c.Context(), i.Login, i.Password)
 	if err != nil {
 		h.logger.Errorf("Error on login request: %s", err.Error())
 		if errors.Is(err, ErrInvalidCredentials) {
@@ -51,7 +52,7 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	t, err := h.Service.Register(c.Context(), i.Login, i.Password)
+	t, err := h.service.Register(c.Context(), i.Login, i.Password)
 	if err != nil {
 		h.logger.Errorf("Error on register request: %s", err.Error())
 		if errors.Is(err, ErrLoginIsAlreadyTaken) {
@@ -65,7 +66,7 @@ func (h *Handlers) Register(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
-	uid, err := getUserIDFromToken(c)
+	uid, err := h.getUserIDFromToken(c)
 	if err != nil {
 		h.logger.Errorf("Error on CreateOrder request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -77,7 +78,7 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 	}
 
 	orderNumber := string(c.Body())
-	err = h.Service.SendOrder(c.Context(), orderNumber, uid)
+	err = h.service.SendOrder(c.Context(), orderNumber, uid)
 	if err != nil {
 		h.logger.Errorf("Error on CreateOrder request: %s", err.Error())
 		if errors.Is(err, ErrLuhnInvalid) {
@@ -96,12 +97,12 @@ func (h *Handlers) CreateOrder(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) GetOrders(c *fiber.Ctx) error {
-	uid, err := getUserIDFromToken(c)
+	uid, err := h.getUserIDFromToken(c)
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	orders, err := h.Service.GetOrders(c.Context(), uid)
+	orders, err := h.service.GetOrders(c.Context(), uid)
 	if err != nil {
 		h.logger.Errorf("Error on GetOrders request: %s", err.Error())
 		if errors.Is(err, ErrNoRecords) {
@@ -115,13 +116,13 @@ func (h *Handlers) GetOrders(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) GetBalance(c *fiber.Ctx) error {
-	uid, err := getUserIDFromToken(c)
+	uid, err := h.getUserIDFromToken(c)
 	if err != nil {
 		h.logger.Errorf("Error on GetBalance request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	bw, err := h.Service.GetBalanceByUserID(c.Context(), uid)
+	bw, err := h.service.GetBalanceByUserID(c.Context(), uid)
 	if err != nil {
 		h.logger.Errorf("Error on GetBalance request: %s", err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
@@ -132,7 +133,7 @@ func (h *Handlers) GetBalance(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) Withdraw(c *fiber.Ctx) error {
-	uid, err := getUserIDFromToken(c)
+	uid, err := h.getUserIDFromToken(c)
 	if err != nil {
 		h.logger.Errorf("Error on Withdraw request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
@@ -144,7 +145,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	err = h.Service.Withdraw(c.Context(), i, uid)
+	err = h.service.Withdraw(c.Context(), i, uid)
 	if err != nil {
 		h.logger.Errorf("Error on Withdraw request: %s", err.Error())
 		if errors.Is(err, ErrLuhnInvalid) {
@@ -160,13 +161,13 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 }
 
 func (h *Handlers) WithdrawHistory(c *fiber.Ctx) error {
-	uid, err := getUserIDFromToken(c)
+	uid, err := h.getUserIDFromToken(c)
 	if err != nil {
 		h.logger.Errorf("Error on WithdrawHistory request: %s", err.Error())
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
-	wh, err := h.Service.GetWithdrawHistory(c.Context(), uid)
+	wh, err := h.service.GetWithdrawHistory(c.Context(), uid)
 	if err != nil {
 		h.logger.Errorf("Error on WithdrawHistory request: %s", err.Error())
 		if errors.Is(err, ErrNoRecords) {
@@ -191,11 +192,11 @@ func setAuthCookie(c *fiber.Ctx, token string) {
 	c.Cookie(cookie)
 }
 
-func getUserIDFromToken(c *fiber.Ctx) (int, error) {
+func (h *Handlers) getUserIDFromToken(c *fiber.Ctx) (int, error) {
 	tokenString := c.Cookies("token")
 	claims := jwt.MapClaims{}
 	_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil
+		return []byte(h.secret), nil
 	})
 	if err != nil {
 		return 0, err

@@ -64,6 +64,12 @@ func (s AccrualService) SendToQueue(ctx context.Context, uid int, orderNumber st
 	}
 }
 
+type accrualResponse struct {
+	Order   string          `json:"order"`
+	Status  string          `json:"status"`
+	Accrual decimal.Decimal `json:"accrual,omitempty"`
+}
+
 func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber string) {
 	//todo mutex?????
 	body, err := s.makeRequest(orderNumber)
@@ -71,7 +77,7 @@ func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber
 		if errors.Is(err, ErrTooManyRequests) {
 			go s.SendToQueue(ctx, uid, orderNumber)
 		}
-		//s.logger.Errorf("ProcessAccrual error: %s", err.Error())
+		s.logger.Errorf("ProcessAccrual error: %s", err.Error())
 		return
 	}
 
@@ -127,9 +133,6 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 	if res.StatusCode != http.StatusOK {
 		return nil, ErrTooManyRequests
 	}
-	//if res.StatusCode != http.StatusOK {
-	//	return nil, ErrUnknownResponseFromAccrualSystem
-	//}
 
 	var buf bytes.Buffer
 	_, err = io.Copy(&buf, res.Body)
@@ -138,10 +141,4 @@ func (s AccrualService) makeRequest(orderNumber string) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-type accrualResponse struct {
-	Order   string          `json:"order"`
-	Status  string          `json:"status"`
-	Accrual decimal.Decimal `json:"accrual,omitempty"`
 }

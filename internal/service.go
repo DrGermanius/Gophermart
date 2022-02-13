@@ -25,13 +25,14 @@ type IService interface {
 	GetWithdrawHistory(context.Context, int) ([]model.WithdrawOutput, error)
 }
 
-func NewService(Repository IRepository, AccrualService AccrualService, logger *zap.SugaredLogger) *Service {
-	return &Service{Repository: Repository, AccrualService: AccrualService, logger: logger}
+func NewService(Repository IRepository, AccrualService AccrualService, secret string, logger *zap.SugaredLogger) *Service {
+	return &Service{Repository: Repository, AccrualService: AccrualService, secret: secret, logger: logger}
 }
 
 type Service struct {
 	Repository     IRepository
 	AccrualService AccrualService
+	secret         string
 	logger         *zap.SugaredLogger
 }
 
@@ -112,7 +113,7 @@ func (s Service) GetJWTToken(uid string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	t, err := token.SignedString([]byte("secret")) //todo secret
+	t, err := token.SignedString(s.secret) //todo secret
 	if err != nil {
 		return "", err
 	}

@@ -99,7 +99,7 @@ func (r Repository) GetOrderByID(ctx context.Context, orderNumber string) (model
 	err := row.Scan(&o.Number, &o.UserID, &o.Status, &o.UploadedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return model.Order{UserID: -1}, nil //todo magic number
+			return model.Order{UserID: -1}, nil
 		}
 		return model.Order{}, err
 	}
