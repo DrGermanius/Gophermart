@@ -66,7 +66,7 @@ func (mr *MockIRepositoryMockRecorder) GetBalanceByUserID(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalanceByUserID", reflect.TypeOf((*MockIRepository)(nil).GetBalanceByUserID), arg0, arg1)
 }
 
-// GetOrderByID mocks base method.
+// GetOrderByNumber mocks base method.
 func (m *MockIRepository) GetOrderByNumber(arg0 context.Context, arg1 string) (model.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrderByNumber", arg0, arg1)
@@ -75,8 +75,8 @@ func (m *MockIRepository) GetOrderByNumber(arg0 context.Context, arg1 string) (m
 	return ret0, ret1
 }
 
-// GetOrderByID indicates an expected call of GetOrderByID.
-func (mr *MockIRepositoryMockRecorder) GetOrderByID(arg0, arg1 interface{}) *gomock.Call {
+// GetOrderByNumber indicates an expected call of GetOrderByNumber.
+func (mr *MockIRepositoryMockRecorder) GetOrderByNumber(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderByNumber", reflect.TypeOf((*MockIRepository)(nil).GetOrderByNumber), arg0, arg1)
 }
