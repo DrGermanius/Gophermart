@@ -16,6 +16,14 @@ import (
 	"github.com/DrGermanius/Gophermart/internal/model"
 )
 
+//go:generate mockgen -source accrual.go -destination ./mock/accrual.go
+
+type IAccrual interface {
+	Run()
+	SendToQueue(context.Context, int, string)
+	ProcessAccrual(context.Context, int, string)
+}
+
 type AccrualService struct {
 	repo   IRepository
 	url    string
@@ -24,7 +32,7 @@ type AccrualService struct {
 	logger *zap.SugaredLogger
 }
 
-func NewAccrualService(repo IRepository, url string, ctx context.Context, logger *zap.SugaredLogger) *AccrualService {
+func NewAccrualService(repo IRepository, url string, ctx context.Context, logger *zap.SugaredLogger) IAccrual {
 	s := &AccrualService{
 		repo:   repo,
 		url:    url,

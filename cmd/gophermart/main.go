@@ -39,7 +39,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	accrualService := app.NewAccrualService(repository, cfg.AccrualSystemAddress, ctx, sugaredLogger)
-	service := app.NewService(repository, *accrualService, cfg.JWTSecret, sugaredLogger)
+	service := app.NewService(repository, accrualService, cfg.JWTSecret, sugaredLogger)
 	handlers := app.NewHandlers(service, cfg.JWTSecret, sugaredLogger)
 
 	app := fiber.New()

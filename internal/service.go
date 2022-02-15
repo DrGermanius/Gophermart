@@ -14,6 +14,8 @@ import (
 	"github.com/DrGermanius/Gophermart/internal/model"
 )
 
+//go:generate mockgen -source service.go -destination ./mock/service.go
+
 type IService interface {
 	Register(context.Context, string, string) (string, error)
 	Login(context.Context, string, string) (string, error)
@@ -25,13 +27,13 @@ type IService interface {
 	GetWithdrawHistory(context.Context, int) ([]model.WithdrawOutput, error)
 }
 
-func NewService(Repository IRepository, AccrualService AccrualService, secret string, logger *zap.SugaredLogger) *Service {
+func NewService(Repository IRepository, AccrualService IAccrual, secret string, logger *zap.SugaredLogger) *Service {
 	return &Service{Repository: Repository, AccrualService: AccrualService, secret: secret, logger: logger}
 }
 
 type Service struct {
 	Repository     IRepository
-	AccrualService AccrualService
+	AccrualService IAccrual
 	secret         string
 	logger         *zap.SugaredLogger
 }
@@ -46,7 +48,7 @@ func (s Service) SendOrder(ctx context.Context, orderNumber string, uid int) err
 		return ErrLuhnInvalid
 	}
 
-	order, err := s.Repository.GetOrderByID(ctx, orderNumber)
+	order, err := s.Repository.GetOrderByNumber(ctx, orderNumber)
 	if err != nil {
 		return err
 	}
