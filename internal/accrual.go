@@ -79,7 +79,6 @@ type accrualResponse struct {
 }
 
 func (s AccrualService) ProcessAccrual(ctx context.Context, uid int, orderNumber string) {
-	//todo mutex?????
 	body, err := s.makeRequest(orderNumber)
 	if err != nil {
 		if errors.Is(err, ErrTooManyRequests) {

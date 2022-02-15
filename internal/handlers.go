@@ -141,7 +141,7 @@ func (h *Handlers) Withdraw(c *fiber.Ctx) error {
 
 	var i model.WithdrawInput
 
-	if err = c.BodyParser(&i); err != nil || i.OrderNumber == "" || i.Sum.Equal(decimal.NewFromInt(0)) { //todo beautify?
+	if err = c.BodyParser(&i); err != nil || i.OrderNumber == "" || i.Sum.Equal(decimal.NewFromInt(0)) {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 

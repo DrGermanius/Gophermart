@@ -80,7 +80,7 @@ func (s Service) Register(ctx context.Context, login, password string) (string, 
 		return "", ErrLoginIsAlreadyTaken
 	}
 
-	h := getHash(password)
+	h := GetHash(password)
 	id, err := s.Repository.Register(ctx, login, h)
 	if err != nil {
 		return "", err
@@ -94,7 +94,7 @@ func (s Service) Register(ctx context.Context, login, password string) (string, 
 }
 
 func (s Service) Login(ctx context.Context, login, password string) (string, error) {
-	h := getHash(password)
+	h := GetHash(password)
 	id, err := s.Repository.CheckCredentials(ctx, login, h)
 	if err != nil {
 		return "", err
@@ -115,7 +115,7 @@ func (s Service) GetJWTToken(uid string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	t, err := token.SignedString([]byte(s.secret)) //todo secret
+	t, err := token.SignedString([]byte(s.secret))
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +145,6 @@ func (s Service) GetBalanceByUserID(ctx context.Context, uid int) (model.Balance
 }
 
 func (s Service) Withdraw(ctx context.Context, i model.WithdrawInput, uid int) error {
-	//todo is we need mutex here?
 
 	o, err := strconv.Atoi(i.OrderNumber)
 	if err != nil {
@@ -156,7 +155,7 @@ func (s Service) Withdraw(ctx context.Context, i model.WithdrawInput, uid int) e
 		return ErrLuhnInvalid
 	}
 
-	bw, err := s.Repository.GetBalanceByUserID(ctx, uid) //todo can be called by 2 goroutines at same time?
+	bw, err := s.Repository.GetBalanceByUserID(ctx, uid)
 	if err != nil {
 		return err
 	}
@@ -190,7 +189,7 @@ func (s Service) GetWithdrawHistory(ctx context.Context, uid int) ([]model.Withd
 	return wh, nil
 }
 
-func getHash(s string) string {
+func GetHash(s string) string {
 	h := sha256.New()
 	ph := h.Sum([]byte(s))
 	return base64.StdEncoding.EncodeToString(ph)

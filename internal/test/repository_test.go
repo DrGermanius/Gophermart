@@ -1,4 +1,4 @@
-package test_test
+package test
 
 import (
 	"context"
@@ -12,6 +12,9 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/DrGermanius/Gophermart/internal"
+	"github.com/DrGermanius/Gophermart/internal/model"
 )
 
 var _ = Describe("Repository", func() {
@@ -214,6 +217,26 @@ var _ = Describe("Repository", func() {
 			err := repo.Withdraw(context.Background(), i, bw, uid)
 			Expect(err).ShouldNot(HaveOccurred())
 		})
+		It("Register without error", func() {
+			login := "test"
+			password := "testest"
+
+			mock.ExpectQuery("INSERT INTO users (.+)").
+				WithArgs(login, password).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+			_, err := repo.Register(context.Background(), login, password)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("Register with error", func() {
+			login := "test"
+			password := "testest"
+
+			mock.ExpectQuery("INSERT INTO users (.+)").
+				WithArgs(login, password).WillReturnError(errors.New("some error"))
+
+			_, err := repo.Register(context.Background(), login, password)
+			Expect(err).Should(HaveOccurred())
+		})
 		It("SendOrder with error", func() {
 			uid := 1
 			i := model.WithdrawInput{
@@ -326,6 +349,112 @@ var _ = Describe("Repository", func() {
 				WithArgs(status, orderNumber).WillReturnError(errors.New("some error"))
 
 			err := repo.UpdateOrderStatus(context.Background(), orderNumber, status)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("IsUserExist without error", func() {
+			login := "test"
+
+			mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM users WHERE login=\\$1\\)").
+				WithArgs(login).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+			_, err := repo.IsUserExist(context.Background(), login)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("IsUserExist with error", func() {
+			login := "test"
+
+			mock.ExpectQuery("SELECT EXISTS\\(SELECT 1 FROM users WHERE login=\\$1\\)").
+				WithArgs(login).WillReturnError(errors.New("some error"))
+
+			_, err := repo.IsUserExist(context.Background(), login)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("CheckCredentials without error", func() {
+			login := "test"
+			password := "pass"
+
+			mock.ExpectQuery("SELECT id FROM users WHERE login = \\$1 AND password = \\$2").
+				WithArgs(login, password).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+			_, err := repo.CheckCredentials(context.Background(), login, password)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("CheckCredentials with error", func() {
+			login := "test"
+			password := "pass"
+
+			mock.ExpectQuery("SELECT id FROM users WHERE login = \\$1 AND password = \\$2").
+				WithArgs(login, password).WillReturnError(errors.New("some error"))
+
+			_, err := repo.CheckCredentials(context.Background(), login, password)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Withdraw without error", func() {
+			uid := 1
+
+			i := model.WithdrawInput{
+				OrderNumber: "1",
+				Sum:         decimal.NewFromInt(1),
+			}
+			bw := model.BalanceWithdrawn{
+				Balance:   decimal.NewFromInt(1),
+				Withdrawn: decimal.NewFromInt(1),
+			}
+
+			mock.ExpectBegin()
+
+			mock.ExpectExec("INSERT INTO withdraw_history \\(order_number, user_id, amount, processed_at\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\)").
+				WithArgs(i.OrderNumber, uid, i.Sum, sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(1, 1))
+
+			mock.ExpectExec("UPDATE users SET balance = \\$1, withdrawn = \\$2 WHERE id = \\$3").
+				WithArgs(bw.Balance, bw.Withdrawn, uid).WillReturnResult(sqlmock.NewResult(1, 1))
+
+			mock.ExpectCommit()
+
+			err := repo.Withdraw(context.Background(), i, bw, uid)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("Withdraw with error", func() {
+			uid := 1
+
+			i := model.WithdrawInput{
+				OrderNumber: "1",
+				Sum:         decimal.NewFromInt(1),
+			}
+			bw := model.BalanceWithdrawn{
+				Balance:   decimal.NewFromInt(1),
+				Withdrawn: decimal.NewFromInt(1),
+			}
+
+			mock.ExpectBegin()
+
+			mock.ExpectExec("INSERT INTO withdraw_history \\(order_number, user_id, amount, processed_at\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\)").
+				WithArgs(i.OrderNumber, uid, i.Sum, sqlmock.AnyArg()).WillReturnError(errors.New("some error"))
+
+			err := repo.Withdraw(context.Background(), i, bw, uid)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Withdraw with other error", func() {
+			uid := 1
+
+			i := model.WithdrawInput{
+				OrderNumber: "1",
+				Sum:         decimal.NewFromInt(1),
+			}
+			bw := model.BalanceWithdrawn{
+				Balance:   decimal.NewFromInt(1),
+				Withdrawn: decimal.NewFromInt(1),
+			}
+
+			mock.ExpectBegin()
+
+			mock.ExpectExec("INSERT INTO withdraw_history \\(order_number, user_id, amount, processed_at\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\)").
+				WithArgs(i.OrderNumber, uid, i.Sum, sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(1, 1))
+
+			mock.ExpectExec("UPDATE users SET balance = \\$1, withdrawn = \\$2 WHERE id = \\$3").
+				WithArgs(bw.Balance, bw.Withdrawn, uid).WillReturnError(errors.New("some error"))
+
+			err := repo.Withdraw(context.Background(), i, bw, uid)
 			Expect(err).Should(HaveOccurred())
 		})
 	})

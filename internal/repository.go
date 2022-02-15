@@ -55,7 +55,7 @@ func NewRepository(connString string, embedMigrations embed.FS, logger *zap.Suga
 
 func (r Repository) Register(ctx context.Context, login, password string) (int, error) {
 	var id int
-	row := r.Conn.QueryRowContext(ctx, "INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id", login, password)
+	row := r.Conn.QueryRowContext(ctx, "INSERT INTO users (login, password) VALUES ($1,$2) RETURNING id", login, password)
 
 	err := row.Scan(&id)
 	if err != nil {
@@ -67,7 +67,7 @@ func (r Repository) Register(ctx context.Context, login, password string) (int, 
 func (r Repository) IsUserExist(ctx context.Context, login string) (bool, error) {
 	exist := false
 
-	row := r.Conn.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE  login=$1)", login)
+	row := r.Conn.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE login=$1)", login)
 	err := row.Scan(&exist)
 	if err != nil {
 		return false, err
@@ -93,7 +93,7 @@ func (r Repository) CheckCredentials(ctx context.Context, login string, password
 
 func (r Repository) GetOrderByNumber(ctx context.Context, orderNumber string) (model.Order, error) {
 	var o model.Order
-	row := r.Conn.QueryRowContext(ctx, "SELECT number, user_id, status, uploaded_at FROM orders WHERE number = $1", orderNumber) //todo sqlx
+	row := r.Conn.QueryRowContext(ctx, "SELECT number, user_id, status, uploaded_at FROM orders WHERE number = $1", orderNumber)
 	err := row.Scan(&o.Number, &o.UserID, &o.Status, &o.UploadedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
