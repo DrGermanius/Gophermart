@@ -150,7 +150,7 @@ var _ = Describe("Repository", func() {
 		It("GetOrders without error", func() {
 			ctx := context.Background()
 			uid := 1
-			o := make([]model.OrderOutput, 1, 1)
+			o := make([]model.OrderOutput, 1)
 
 			rep.EXPECT().GetOrders(ctx, uid).Return(o, nil)
 
@@ -160,7 +160,7 @@ var _ = Describe("Repository", func() {
 		It("GetOrders with error", func() {
 			ctx := context.Background()
 			uid := 1
-			o := make([]model.OrderOutput, 0, 0)
+			o := make([]model.OrderOutput, 0)
 
 			rep.EXPECT().GetOrders(ctx, uid).Return(o, nil)
 
@@ -254,7 +254,7 @@ var _ = Describe("Repository", func() {
 		It("GetWithdrawHistory without error", func() {
 			ctx := context.Background()
 			uid := 1
-			i := make([]model.WithdrawOutput, 1, 1)
+			i := make([]model.WithdrawOutput, 1)
 
 			rep.EXPECT().GetWithdrawHistory(ctx, uid).Return(i, nil)
 
@@ -264,7 +264,7 @@ var _ = Describe("Repository", func() {
 		It("GetWithdrawHistory with error", func() {
 			ctx := context.Background()
 			uid := 1
-			i := make([]model.WithdrawOutput, 0, 0)
+			i := make([]model.WithdrawOutput, 0)
 
 			rep.EXPECT().GetWithdrawHistory(ctx, uid).Return(i, nil)
 
