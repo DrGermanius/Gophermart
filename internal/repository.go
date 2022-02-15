@@ -16,10 +16,6 @@ import (
 	"github.com/DrGermanius/Gophermart/internal/model"
 )
 
-const (
-	withdrawFields = "order_number, amount, processed_at"
-)
-
 type IRepository interface {
 	Register(context.Context, string, string) (int, error)
 	IsUserExist(context.Context, string) (bool, error)
@@ -171,7 +167,7 @@ func (r Repository) Withdraw(ctx context.Context, i model.WithdrawInput, bw mode
 }
 
 func (r Repository) GetWithdrawHistory(ctx context.Context, uid int) ([]model.WithdrawOutput, error) {
-	rows, err := r.conn.QueryContext(ctx, "SELECT "+withdrawFields+" FROM withdraw_history WHERE user_id = $1 ORDER BY processed_at DESC", uid)
+	rows, err := r.conn.QueryContext(ctx, "SELECT order_number, amount, processed_at FROM withdraw_history WHERE user_id = $1 ORDER BY processed_at DESC", uid)
 	if err != nil {
 		return nil, err
 	}
