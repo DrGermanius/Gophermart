@@ -1,80 +1,50 @@
-# Техническое задание
+### Abstract scheme of interaction with the system
 
-## Накопительная система лояльности «Гофермарт»
+Below is an abstract business logic of user interaction with the system:
 
----
+1. User registers in "Gophermart" loyalty system.
+2. User makes a purchase in "Gophermart" online store.
+3. The order goes into "Gophermart" loyalty points system.
+4. User transmits the number of the made order to the loyalty points system.
+5. The system connects the order number with the user and checks the number with the loyalty points system. 
+6. In case of positive loyalty points calculation, loyalty points are credited to the user's account.
+7. User can make orders in "Gophermart" using loyalty points.
 
-### Общие требования
+### Loyalty points calculation system
 
-Система представляет собой HTTP API со следующими требованиями к бизнес-логике:
+The loyalty points calculation system is an external service in the trusted loop. It operates according to the black box principle and is not available for inspection by external clients. The system calculates loyalty points for the committed order according to complicated algorithms, which can change at any moment.
 
-* регистрация, аутентификация и авторизация пользователей;
-* приём номеров заказов от зарегистрированных пользователей;
-* учёт и ведение списка переданных номеров заказов зарегистрированного пользователя;
-* учёт и ведение накопительного счёта зарегистрированного пользователя;
-* проверка принятых номеров заказов через систему расчёта баллов лояльности;
-* начисление за каждый подходящий номер заказа положенного вознаграждения на счёт лояльности пользователя.
+An external customer can only see information about the number of loyalty points assigned for a certain order. An external consumer does not know the reasons for the presence or absence of the points.
 
-![image](https://pictures.s3.yandex.net:443/resources/gophermart2x_1634502166.png)
+### Endpoints of HTTP API
 
-### Абстрактная схема взаимодействия с системой
+The "Gophermart" accumulative loyalty system must provide the following HTTP handlers:
 
-Ниже представлена абстрактная бизнес-логика взаимодействия пользователя с системой:
+* `POST /api/user/register` - user registration;
+* `POST /api/user/login` - user authentication;
+* `POST /api/user/orders` - loading the user's order number for calculation;
+* `GET /api/user/orders` - receiving a list of order numbers uploaded by the user, their processing statuses and information about accruals;
+* `GET /api/user/balance` - getting current balance of user's loyalty points account;
+* `POST /api/user/balance/withdraw` - request to write off points from the accumulation account to pay for a new order;
+* `GET /api/user/balance/withdrawals` - receiving information about the withdrawal of funds from the savings account by the user.
 
-1. Пользователь регистрируется в системе лояльности «Гофермарт».
-2. Пользователь совершает покупку в интернет-магазине «Гофермарт».
-3. Заказ попадает в систему расчёта баллов лояльности.
-4. Пользователь передаёт номер совершённого заказа в систему лояльности.
-5. Система связывает номер заказа с пользователем и сверяет номер с системой расчёта баллов лояльности.
-6. При наличии положительного расчёта баллов лояльности производится начисление баллов лояльности на счёт пользователя.
-7. Пользователь списывает доступные баллы лояльности для частичной или полной оплаты последующих заказов в интернет-магазине «Гофермарт».
+### General restrictions and requirements
 
-Примечания:
+* The data warehouse is PostgreSQL;
+* The client can support HTTP requests/responses with data compression;
+* Order numbers are unique and never repeated;
+* An order number can only be accepted for processing once from one user;
+* The order number can have no accrual;
+* Remuneration is credited and spent in virtual points at the rate of 1 point = 1 dollar.
 
-- пункт 2 представлен как гипотетический и не требует реализации в данной работе;
-- пункт 3 реализован в системе расчёта баллов лояльности и не требует реализации в данной работе.
+#### **User registration**
 
-### Система расчета баллов лояльности
+Handler: `POST /api/user/register`.
 
-Система расчета баллов лояльности является внешним сервисом в доверенном контуре. Он работает по принципу чёрного ящика и недоступен для инспекции внешними клиентами. Система рассчитывает положенные баллы лояльности за совершённый заказ по сложным алгоритмам, которые могут меняться в любой момент времени.
+Registration is done with a login/password pair. Each login must be unique.
+After successful registration there should be automatic user authentication.
 
-Внешнему потребителю доступна только информация о количестве положенных за конкретный заказ баллов лояльности. Причины наличия или отсутствия начислений внешнему потребителю неизвестны.
-
-Протокол взаимодействия с сервисом базы будет предоставлен в конце.
-
-### Сводное HTTP API
-
-Накопительная система лояльности «Гофермарт» должна предоставлять следующие HTTP-хендлеры:
-
-* `POST /api/user/register` — регистрация пользователя;
-* `POST /api/user/login` — аутентификация пользователя;
-* `POST /api/user/orders` — загрузка пользователем номера заказа для расчёта;
-* `GET /api/user/orders` — получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях;
-* `GET /api/user/balance` — получение текущего баланса счёта баллов лояльности пользователя;
-* `POST /api/user/balance/withdraw` — запрос на списание баллов с накопительного счёта в счёт оплаты нового заказа;
-* `GET /api/user/balance/withdrawals` — получение информации о выводе средств с накопительного счёта пользователем.
-
-### Общие ограничения и требования
-
-* хранилище данных — PostgreSQL;
-* структура таблиц остаётся на усмотрение студента;
-* типы и формат хранения данных (в том числе паролей и прочей чувствительной информации) остаётся на усмотрение студента;
-* клиент может поддерживать HTTP-запросы/ответы со сжатием данных;
-* клиент не обязан делать запросы соответственно нижеизложенной спецификации API, любая проверка запроса остаётся на усмотрение студента;
-* формат и алгоритм проверки аутентификации и авторизации пользователя остаётся на усмотрение студента;
-* номера заказов уникальны и никогда не повторяются;
-* номер заказа может быть принят в обработку только один раз от одного пользователя;
-* номер заказа может не иметь никакого начисления;
-* вознаграждение начисляется и тратится в виртуальных баллах из расчёта 1 балл = 1 рубль.
-
-#### **Регистрация пользователя**
-
-Хендлер: `POST /api/user/register`.
-
-Регистрация производится по паре логин/пароль. Каждый логин должен быть уникальным.
-После успешной регистрации должна происходить автоматическая аутентификация пользователя.
-
-Формат запроса:
+The format of the request:
 
 ```
 POST /api/user/register HTTP/1.1
@@ -87,20 +57,20 @@ Content-Type: application/json
 }
 ```
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — пользователь успешно зарегистрирован и аутентифицирован;
-- `400` — неверный формат запроса;
-- `409` — логин уже занят;
-- `500` — внутренняя ошибка сервера.
+- `200` - user successfully registered and authenticated;
+- `400` - incorrect format of the request;
+- `409` - login already taken;
+- `500` - internal server error.
 
-#### **Аутентификация пользователя**
+#### **User Authentication**
 
-Хендлер: `POST /api/user/login`.
+Handler: `POST /api/user/login`.
 
-Аутентификация производится по паре логин/пароль.
+Authentication is performed by the login/password pair.
 
-Формат запроса:
+Request format:
 
 ```
 POST /api/user/login HTTP/1.1
@@ -113,22 +83,22 @@ Content-Type: application/json
 }
 ```
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — пользователь успешно аутентифицирован;
-- `400` — неверный формат запроса;
-- `401` — неверная пара логин/пароль;
-- `500` — внутренняя ошибка сервера.
+- `200` - user successfully authenticated;
+- `400` - incorrect format of request;
+- `401` - invalid login/password pair;
+- `500` - internal server error.
 
-#### **Загрузка номера заказа**
+#### **Load order number**
 
-Хендлер: `POST /api/user/orders`.
+Handler: `POST /api/user/orders`.
 
-Хендлер доступен только аутентифицированным пользователям. Номером заказа является последовательность цифр произвольной длины.
+Handler is available only to authenticated users. The order number is a sequence of digits of any length.
 
-Номер заказа может быть проверен на корректность ввода с помощью [алгоритма Луна](https://ru.wikipedia.org/wiki/Алгоритм_Луна){target="_blank"}.
+The order number can be checked for correctness using [Moon algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm).
 
-Формат запроса:
+Query format:
 
 ```
 POST /api/user/orders HTTP/1.1
@@ -138,41 +108,41 @@ Content-Type: text/plain
 12345678903
 ```
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — номер заказа уже был загружен этим пользователем;
-- `202` — новый номер заказа принят в обработку;
-- `400` — неверный формат запроса;
-- `401` — пользователь не аутентифицирован;
-- `409` — номер заказа уже был загружен другим пользователем;
-- `422` — неверный формат номера заказа;
-- `500` — внутренняя ошибка сервера.
+- `200` - the order number has already been uploaded by this user;
+- `202` - new order number accepted for processing;
+- `400` - wrong format of the request;
+- `401` - user is not authenticated;
+- `409` - the order number has already been uploaded by another user;
+- `422` - invalid format of the order number;
+- `500` - internal server error.
 
-#### **Получение списка загруженных номеров заказов**
+#### **Get list of downloaded order numbers**
 
-Хендлер: `GET /api/user/orders`.
+Handler: `GET /api/user/orders`.
 
-Хендлер доступен только авторизованному пользователю. Номера заказа в выдаче должны быть отсортированы по времени загрузки от самых старых к самым новым. Формат даты — RFC3339.
+The handler is available only to the authorized user. The order numbers in the output should be sorted by download time from the oldest to the newest. The date format is RFC3339.
 
-Доступные статусы обработки расчётов:
+Available billing processing statuses:
 
-- `NEW` — заказ загружен в систему, но не попал в обработку;
-- `PROCESSING` — вознаграждение за заказ рассчитывается;
-- `INVALID` — система расчёта вознаграждений отказала в расчёте;
-- `PROCESSED` — данные по заказу проверены и информация о расчёте успешно получена.
+- `NEW` - the order has been uploaded to the system but has not gone into processing;
+- `PROCESSING` - remuneration for the order is calculated;
+- `INVALID` - the system for the calculation of remuneration refused in the calculation;
+- `PROCESSED` - data on the order are checked and information on the calculation is successfully received.
 
-Формат запроса:
+Request format:
 
 ```
 GET /api/user/orders HTTP/1.1
 Content-Length: 0
 ```
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — успешная обработка запроса.
+- `200` - successful processing of the request.
 
-  Формат ответа:
+  Response format:
 
     ```
     200 OK HTTP/1.1
@@ -199,28 +169,28 @@ Content-Length: 0
     ]
     ```
 
-- `204` — нет данных для ответа.
-- `401` — пользователь не авторизован.
-- `500` — внутренняя ошибка сервера.
+- `204` - no data to answer.
+- `401` - user is not authorized.
+- `500` - internal server error.
 
-#### **Получение текущего баланса пользователя**
+#### **Get current user balance**
 
-Хендлер: `GET /api/user/balance`.
+Handler: `GET /api/user/balance`.
 
-Хендлер доступен только авторизованному пользователю. В ответе должны содержаться данные о текущей сумме баллов лояльности, а также сумме использованных за весь период регистрации баллов.
+Handler is available only for authorized user. The response should contain data about the current amount of loyalty points, as well as the amount of points used during the whole registration period.
 
-Формат запроса:
+The format of the request:
 
 ```
 GET /api/user/balance HTTP/1.1
 Content-Length: 0
 ```
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — успешная обработка запроса.
+- `200` - successful processing of the request.
 
-  Формат ответа:
+  Response format:
 
     ```
     200 OK HTTP/1.1
@@ -233,57 +203,57 @@ Content-Length: 0
     }
     ```
 
-- `401` — пользователь не авторизован.
-- `500` — внутренняя ошибка сервера.
+- `401` - user is not authorized.
+- `500` - internal server error.
 
-#### **Запрос на списание средств**
+#### **Request to debit funds**
 
-Хендлер: `POST /api/user/balance/withdraw`
+Handler: `POST /api/user/balance/withdraw`.
 
-Хендлер доступен только авторизованному пользователю. Номер заказа представляет собой гипотетический номер нового заказа пользователя в счет оплаты которого списываются баллы.
+The handler is only available to the authorized user. The order number is a hypothetical number of the user's new order in payment of which points are deducted.
 
-Примечание: для успешного списания достаточно успешной регистрации запроса, никаких внешних систем начисления не предусмотрено и не требуется реализовывать.
+Note: successful registration of the request is sufficient for successful deduction, no external accrual systems are provided and do not need to be implemented.
 
-Формат запроса:
+Request format:
 
 ```
 POST /api/user/balance/withdraw HTTP/1.1
 Content-Type: application/json
 
 {
-	"order": "2377225624",
+    "order": "2377225624",
     "sum": 751
 }
 ```
 
-Здесь `order` — номер заказа, а `sum` — сумма баллов к списанию в счёт оплаты.
+Here `order` is the order number and `sum` is the amount of points to be charged from user's payment account.
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — успешная обработка запроса;
-- `401` — пользователь не авторизован;
-- `402` — на счету недостаточно средств;
-- `422` — неверный номер заказа;
-- `500` — внутренняя ошибка сервера.
+- `200` - successful processing of the request;
+- `401` - user is not authorized;
+- `402` - insufficient funds on the account;
+- `422` - invalid order number;
+- `500` - internal server error.
 
-#### **Получение информации о выводе средств**
+#### **Receipt of withdrawal information**
 
-Хендлер: `GET /api/user/balance/withdrawals`.
+Handler: `GET /api/user/balance/withdrawals`.
 
-Хендлер доступен только авторизованному пользователю. Факты выводов в выдаче должны быть отсортированы по времени вывода от самых старых к самым новым. Формат даты — RFC3339.
+Handler is available only to the authorized user. The withdrawal facts in the output should be sorted by withdrawal time from the oldest to the newest. The date format is RFC3339.
 
-Формат запроса:
+Request format:
 
 ```
 GET /api/user/withdrawals HTTP/1.1
 Content-Length: 0
 ```
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — успешная обработка запроса.
+- `200` - successful processing of the request.
 
-  Формат ответа:
+  Response format:
 
     ```
     200 OK HTTP/1.1
@@ -299,28 +269,28 @@ Content-Length: 0
     ]
     ```
 
-- `204` - нет ни одного списания.
-- `401` — пользователь не авторизован.
-- `500` — внутренняя ошибка сервера.
+- `204` - no debit.
+- `401` - user is not authorized.
+- `500` - internal server error.
 
-### Взаимодействие с системой расчёта начислений баллов лояльности
+### Interaction with the system for calculating loyalty points
 
-Для взаимодействия с системой доступен один хендлер:
+One handler is available for interaction with the system:
 
-- `GET /api/orders/{number}` — получение информации о расчёте начислений баллов лояльности.
+- `GET /api/orders/{number}` - getting information about the calculation of loyalty points.
 
-Формат запроса:
+Request format:
 
 ```
 GET /api/orders/{number} HTTP/1.1
 Content-Length: 0
 ```
 
-Возможные коды ответа:
+Possible response codes:
 
-- `200` — успешная обработка запроса.
+- `200` - successful processing of the request.
 
-  Формат ответа:
+  Response format:
 
     ```
     200 OK HTTP/1.1
@@ -334,21 +304,21 @@ Content-Length: 0
     }
     ```
 
-  Поля объекта ответа:
+  The fields of the response object:
 
-    - `order` — номер заказа;
-    - `status` — статус расчёта начисления:
+    - `order` - order number;
+    - `status` - status of accrual calculation:
 
-        - `REGISTERED` — заказ зарегистрирован, но не начисление не рассчитано;
-        - `INVALID` — заказ не принят к расчёту, и вознаграждение не будет начислено;
-        - `PROCESSING` — расчёт начисления в процессе;
-        - `PROCESSED` — расчёт начисления окончен;
+        - `REGISTERED` - the order is registered, but no accrual is not calculated;
+        - `INVALID` - the order is not accepted for calculation and reward will not be calculated;
+        - `PROCESSING` - charging is in process;
+        - `PROCESSED` - computation of accrual is finished;
 
-    - `accrual` — рассчитанные баллы к начислению, при отсутствии начисления — поле отсутствует в ответе.
+    - `accrual` - calculated points to accrual, if there is no accrual - there is no field in the answer.
 
-- `429` — превышено количество запросов к сервису.
+- `429` - the number of requests to the service is exceeded.
 
-  Формат ответа:
+  Answer format:
 
     ```
     429 Too Many Requests HTTP/1.1
@@ -358,16 +328,16 @@ Content-Length: 0
     No more than N requests per minute allowed
     ```
 
-- `500` — внутренняя ошибка сервера.
+- `500` is an internal server error.
 
-Заказ может быть взят в расчёт в любой момент после его совершения. Время выполнения расчёта системой не регламентировано. Статусы `INVALID` и `PROCESSED` являются окончательными.
+The order can be taken into account at any moment after it has been made. The time of settlement is not regulated by the system. Statuses `INVALID` and `PROCESSED` are final.
 
-Общее количество запросов информации о начислении не ограничено.
+The total number of requests for information on the charge is not limited.
 
-### Конфигурирование сервиса накопительной системы лояльности
+### Configuration of the accumulative loyalty system service
 
-Сервис должн поддерживать конфигурирование следующими методами:
+The service must support the following configuration methods:
 
-- адрес и порт запуска сервиса: переменная окружения ОС `RUN_ADDRESS` или флаг `-a`
-- адрес подключения к базе данных: переменная окружения ОС `DATABASE_URI` или флаг `-d`
-- адрес системы расчёта начислений: переменная окружения ОС `ACCRUAL_SYSTEM_ADDRESS` или флаг `-r`
+- service launch address and port: OS environment variable `RUN_ADDRESS` or flag `a`
+- database connection address: OS environment variable `DATABASE_URI` or flag `-d`
+- charging system address: OS environment variable `ACCRUAL_SYSTEM_ADDRESS` or flag `-r`
