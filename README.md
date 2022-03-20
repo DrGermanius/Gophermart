@@ -1,25 +1,12 @@
-# go-musthave-diploma-tpl
+# Accumulative loyalty system "Gophermart"
 
-Шаблон репозитория для индивидуального дипломного проекта курса "Самостоятельный Go-разработчик"
+The system is an HTTP API with the following business logic requirements:
 
-# Начало работы
+* registration, authentication and authorization of users;
+* getting of order numbers from registered users;
+* registering and maintaining a list of transferred order numbers of registered users;
+* accounting and maintenance of the registered user's accumulative account;
+* checking received order numbers through the loyalty point system;
+* accruing for each eligible order number the reward due to the user's loyalty account.
 
-1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере
-2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` - адрес вашего репозитория на Github без
-   префикса `https://`) для создания модуля
-
-# Обновление шаблона
-
-Чтобы иметь возможность получать обновления автотестов и других частей шаблона выполните следующую команды:
-
-```
-git remote add -m master template https://github.com/yandex-praktikum/go-musthave-diploma-tpl.git
-```
-
-Для обновления кода автотестов выполните команду:
-
-```
-git fetch template && git checkout template/master .github
-```
-
-затем добавьте полученые изменения в свой репозиторий.
+Specification can be found [here](https://github.com/DrGermanius/Gophermart/blob/master/SPECIFICATION.md).
